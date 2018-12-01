@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Podkis</string>
+    <string name="podcast_thumbnail_content_description">Podcast thumbnail</string>
+    <string name="podcast_detail_image_content_description">Podcast image</string>
+    <string name="podcast_podcast_description_label">Description</string>
+    <string name="podcast_episode_label">Episodes</string>
+
+    <!-- Test Strings for UI Design -->
+    <string name="test_podcast_title">StarTalk Radio</string>
+    <string name="test_podcast_description">Science, pop culture and comedy collide on StarTalk Radio! Astrophysicist and Hayden Planetarium director Neil deGrasse Tyson, his comic co-hosts, guest celebrities and scientists discuss astronomy, physics, and everything else about life in the universe. Keep Looking Up! New episodes premiere Friday nights at 7pm ET.</string>
+    <string name="test_episode_title">The Future of Us, with Sir Martin Rees</string>
+    <string name="test_episode_season_number">Season 9</string>
+    <string name="test_episode_number">Episode 43</string>
+    <string name="test_episode_published_date">Fri, 16 Nov 2018</string>
+    <string name="test_episode_description">Technology, space travel, a changing climate – What does the future hold for us? Neil deGrasse Tyson ponders humanity’s future alongside comic co-host Maeve Higgins and astrophysicist, author, and Astronomer Royal Sir Martin Rees. Photo Credit: StarTalk Radio</string>
+
+</resources>

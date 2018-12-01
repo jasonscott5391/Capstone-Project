@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="MyTheme.Main" parent="@style/MyTheme">
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowExitTransition">@transition/grid_exit_reenter</item>
+        <item name="android:windowReenterTransition">@transition/grid_exit_reenter</item>
+    </style>
+
+</resources>
