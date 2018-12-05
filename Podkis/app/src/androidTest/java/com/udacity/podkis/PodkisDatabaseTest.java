@@ -62,16 +62,6 @@ public class PodkisDatabaseTest {
         assertEquals(podcastList.size(), TEST_NUM_PODCASTS);
     }
 
-    @Test
-    public void testGetPodcastEpisodes() {
-        insertPodcastsAndEpisodes();
-        for (Long podcastId : mPodcastIdList) {
-            List<Episode> episodeList = mPodkisDatabase.podkisDao().getPodcastEpisodes(podcastId);
-            assertNotNull(episodeList);
-            assertEquals(episodeList.size(), TEST_NUM_EPISODES);
-        }
-    }
-
     private void insertPodcastsAndEpisodes() {
         mPodcastIdList = new ArrayList<>();
         for (int i = 0; i < TEST_NUM_PODCASTS; i++) {
@@ -93,7 +83,6 @@ public class PodkisDatabaseTest {
                 episode.seasonNumber = i + 1;
                 episode.episodeNumber = j + 1;
                 episode.imageUrl = String.format("Test Image URL %d", j + 1);
-                episode.podcastImageUrl = String.format("Test Image URL %d", i + 1);
                 episode.duration = String.format("Test Duration %d", j + 1);
                 episode.url = String.format("Test URL %d", j + 1);
 

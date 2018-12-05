@@ -27,6 +27,7 @@ dependencies {
     def room_version = "1.1.1"
     def retrofit_version = "2.5.0"
     def arch_core_version = "1.1.1"
+    def paging_version = "1.0.1"
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "com.android.support:appcompat-v7:$support_version"
@@ -42,6 +43,7 @@ dependencies {
     implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
     implementation "com.squareup.retrofit2:converter-simplexml:$retrofit_version"
     implementation "android.arch.lifecycle:extensions:$arch_core_version"
+    implementation "android.arch.paging:runtime:$paging_version"
     annotationProcessor "android.arch.persistence.room:compiler:$room_version"
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

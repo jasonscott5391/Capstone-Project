@@ -109,7 +109,7 @@ public class PodkisSyncTask {
                     episode.imageUrl = episodeImageUrl;
 
                     episodeList.add(episode);
-                    if (episodeList.size() == 10) {
+                    if (episodeList.size() == 30) {
                         break;
                     }
                 }

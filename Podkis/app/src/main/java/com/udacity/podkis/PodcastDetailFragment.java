@@ -24,8 +24,6 @@ import com.squareup.picasso.Picasso;
 import com.udacity.podkis.viewmodel.EpisodeListViewModel;
 import com.udacity.podkis.viewmodel.EpisodeListViewModelFactory;
 
-import java.util.ArrayList;
-
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_DESCRIPTION;
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_ID;
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME;
@@ -86,8 +84,7 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
         mLinearLayoutManager = new LinearLayoutManager(context);
         mRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        mEpisodeAdapter = new EpisodeAdapter(getContext(), this, new ArrayList<>());
-        mRecyclerView.setAdapter(mEpisodeAdapter);
+        mEpisodeAdapter = new EpisodeAdapter(context, this);
 
         Bundle bundle = getArguments();
         if (bundle == null) {
@@ -137,11 +134,12 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
             mPodcastDetailImageView.setImageDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.ic_launcher_square));
         }
 
-        mEpisodeListViewModel = ViewModelProviders.of(this, new EpisodeListViewModelFactory(context, mPodcastId)).get(EpisodeListViewModel.class);
+        mEpisodeListViewModel = ViewModelProviders.of(this, new EpisodeListViewModelFactory(context, mPodcastId, getResources().getInteger(R.integer.default_page_size))).get(EpisodeListViewModel.class);
         mEpisodeListViewModel.getEpisodeList().observe(this, episodeList -> {
             Log.d(TAG, "Updating Episode List.");
-            mEpisodeAdapter.swapEpisodes(episodeList);
+            mEpisodeAdapter.submitList(episodeList);
         });
+        mRecyclerView.setAdapter(mEpisodeAdapter);
 
         return view;
     }

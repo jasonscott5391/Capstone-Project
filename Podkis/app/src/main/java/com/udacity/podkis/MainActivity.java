@@ -1,5 +1,6 @@
 package com.udacity.podkis;
 
+import android.app.ActivityManager;
 import android.app.ActivityOptions;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
@@ -13,6 +14,8 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.squareup.picasso.LruCache;
+import com.squareup.picasso.Picasso;
 import com.udacity.podkis.repository.PodkisRepository;
 import com.udacity.podkis.viewmodel.PodcastListViewModel;
 
@@ -41,6 +44,8 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Picasso.setSingletonInstance(initCustomPicasso());
 
         mGridLayoutManager = new GridLayoutManager(this, getResources().getInteger(R.integer.podcast_column_count));
 
@@ -108,4 +113,22 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
             startActivity(episodeDetailIntent);
         }
     }
+
+    private Picasso initCustomPicasso() {
+        Picasso.Builder builder = new Picasso.Builder(this);
+        builder.memoryCache(new LruCache(getBytesForMemCache(12)));
+        return builder.build();
+    }
+
+    private int getBytesForMemCache(int percent) {
+        ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+        ActivityManager activityManager = (ActivityManager)
+                getSystemService(ACTIVITY_SERVICE);
+        activityManager.getMemoryInfo(mi);
+
+        double availableMemory = mi.availMem;
+
+        return (int) (percent * availableMemory / 100);
+    }
+
 }

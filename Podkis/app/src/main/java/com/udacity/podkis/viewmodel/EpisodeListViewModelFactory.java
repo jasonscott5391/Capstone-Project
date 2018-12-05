@@ -9,16 +9,18 @@ public class EpisodeListViewModelFactory extends ViewModelProvider.NewInstanceFa
 
     private final Context mContext;
     private final Long mPodcastId;
+    public final int mSize;
 
-    public EpisodeListViewModelFactory(@NonNull final Context context, @NonNull Long podcastId) {
+    public EpisodeListViewModelFactory(@NonNull final Context context, @NonNull Long podcastId, @NonNull int size) {
         this.mContext = context;
         this.mPodcastId = podcastId;
+        this.mSize = size;
     }
 
     @NonNull
     @Override
     public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
         //noinspection unchecked
-        return (T) new EpisodeListViewModel(mContext, mPodcastId);
+        return (T) new EpisodeListViewModel(mContext, mPodcastId, mSize);
     }
 }

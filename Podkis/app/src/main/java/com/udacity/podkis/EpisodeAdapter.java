@@ -1,11 +1,12 @@
 package com.udacity.podkis;
 
+import android.arch.paging.PagedListAdapter;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.util.DiffUtil;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,22 +18,30 @@ import com.squareup.picasso.Transformation;
 import com.udacity.podkis.entity.Episode;
 
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Locale;
 
-public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.EpisodeViewHolder> {
+public class EpisodeAdapter extends PagedListAdapter<Episode, EpisodeAdapter.EpisodeViewHolder> {
 
     private static final String TAG = EpisodeAdapter.class.getSimpleName();
 
     private final Context mContext;
     private EpisodeClickHandler mEpisodeClickHandler;
-    private List<Episode> mEpisodeList;
     private String mPodcastImageUrl = null;
 
-    public EpisodeAdapter(@NonNull final Context context, EpisodeClickHandler episodeClickHandler, List<Episode> episodeList) {
+    public EpisodeAdapter(@NonNull final Context context, EpisodeClickHandler episodeClickHandler) {
+        super(new DiffUtil.ItemCallback<Episode>() {
+            @Override
+            public boolean areItemsTheSame(@NonNull Episode oldEpisode, @NonNull Episode newEpisode) {
+                return oldEpisode.id.equals(newEpisode.id);
+            }
+
+            @Override
+            public boolean areContentsTheSame(@NonNull Episode oldEpisode, @NonNull Episode newEpisode) {
+                return oldEpisode.equals(newEpisode);
+            }
+        });
         this.mContext = context;
         this.mEpisodeClickHandler = episodeClickHandler;
-        this.mEpisodeList = episodeList;
     }
 
     @NonNull
@@ -45,68 +54,62 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.EpisodeV
     @Override
     public void onBindViewHolder(@NonNull EpisodeViewHolder holder, int position) {
 
-        Episode episode = mEpisodeList.get(position);
+        Episode episode = getItem(position);
+        if (episode != null) {
 
-        // Check which image URL to use.
-        String episodeImageUrl = episode.imageUrl;
-        if (episodeImageUrl == null
-                || episodeImageUrl.isEmpty()) {
-            episodeImageUrl = mPodcastImageUrl;
-        }
+            // Check which image URL to use.
+            String episodeImageUrl = episode.imageUrl;
+            if (episodeImageUrl == null
+                    || episodeImageUrl.isEmpty()) {
+                episodeImageUrl = mPodcastImageUrl;
+            }
 
-        if (episodeImageUrl != null
-                && !episodeImageUrl.isEmpty()) {
-            Picasso.get()
-                    .load(episodeImageUrl)
-                    .transform(new Transformation() {
-                        @Override
-                        public Bitmap transform(Bitmap source) {
-                            double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
-                            int targetWidth = holder.mEpisodeImage.getWidth();
-                            int targetHeight = (int) (targetWidth * aspectRatio);
-                            Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
-                            if (result != source) {
-                                source.recycle();
+            if (episodeImageUrl != null
+                    && !episodeImageUrl.isEmpty()) {
+                Picasso.get()
+                        .load(episodeImageUrl)
+                        .transform(new Transformation() {
+                            @Override
+                            public Bitmap transform(Bitmap source) {
+                                double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
+                                int targetWidth = holder.mEpisodeImage.getWidth();
+                                int targetHeight = (int) (targetWidth * aspectRatio);
+                                Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                                if (result != source) {
+                                    source.recycle();
+                                }
+                                return result;
                             }
-                            return result;
-                        }
 
-                        @Override
-                        public String key() {
-                            return TAG;
-                        }
-                    })
-                    .placeholder(ContextCompat.getDrawable(mContext, R.drawable.web_hi_res_512_square))
-                    .into(holder.mEpisodeImage);
-        } else {
-            holder.mEpisodeImage.setImageDrawable(ContextCompat.getDrawable(mContext, R.mipmap.ic_launcher_square));
+                            @Override
+                            public String key() {
+                                return TAG;
+                            }
+                        })
+                        .placeholder(ContextCompat.getDrawable(mContext, R.drawable.web_hi_res_512_square))
+                        .into(holder.mEpisodeImage);
+            } else {
+                holder.mEpisodeImage.setImageDrawable(ContextCompat.getDrawable(mContext, R.mipmap.ic_launcher_square));
+            }
+
+
+            holder.mEpisodeTitle.setText(episode.title);
+            if (episode.seasonNumber != null) {
+                holder.mEpisodeSeasonNumber.setText(String.format(Locale.getDefault(), "Season %d", episode.seasonNumber));
+            } else {
+                holder.mEpisodeSeasonNumber.setVisibility(View.GONE);
+            }
+            holder.mEpisodeNumber.setText(String.format(Locale.getDefault(), "Episode %d", episode.episodeNumber));
+
+            // Format published date.
+            holder.mEpisodePublishedDate.setText(new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(episode.publishedDate));
         }
-
-
-        holder.mEpisodeTitle.setText(episode.title);
-        if (episode.seasonNumber != null) {
-            holder.mEpisodeSeasonNumber.setText(String.format(Locale.getDefault(), "Season %d", episode.seasonNumber));
-        } else {
-            holder.mEpisodeSeasonNumber.setVisibility(View.GONE);
-        }
-        holder.mEpisodeNumber.setText(String.format(Locale.getDefault(), "Episode %d", episode.episodeNumber));
-
-        // Format published date.
-        holder.mEpisodePublishedDate.setText(new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(episode.publishedDate));
-
     }
 
     @Override
     public int getItemCount() {
-        if (mEpisodeList == null) {
-            return 0;
-        }
-        return mEpisodeList.size();
-    }
+        return super.getItemCount();
 
-    public void swapEpisodes(List<Episode> episodeList) {
-        this.mEpisodeList = episodeList;
-        notifyDataSetChanged();
     }
 
     public void setPodcastImageUrl(String podcastImageUrl) {
@@ -139,7 +142,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.EpisodeV
 
         @Override
         public void onClick(View v) {
-            mEpisodeClickHandler.onClickEpisode(mEpisodeList.get(getAdapterPosition()).id);
+            mEpisodeClickHandler.onClickEpisode(getItem(getAdapterPosition()).id);
         }
     }
 }

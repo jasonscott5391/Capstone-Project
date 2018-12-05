@@ -2,4 +2,5 @@
 <resources>
     <integer name="podcast_column_count">2</integer>
     <integer name="main_recycler_view_explode_duration">600</integer>
+    <integer name="default_page_size">5</integer>
 </resources>
