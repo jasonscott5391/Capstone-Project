@@ -1,6 +1,8 @@
 package com.udacity.podkis.repository;
 
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
+import android.arch.paging.PagedList;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
@@ -20,7 +22,6 @@ public class PodkisRepository {
     private static boolean sInitialized;
 
     private static MutableLiveData<List<Podcast>> sPodcastList;
-    private static MutableLiveData<List<Episode>> sEpisodeList;
     private static MutableLiveData<Episode> sEpisode;
 
 
@@ -32,7 +33,6 @@ public class PodkisRepository {
 
         sInitialized = true;
         sPodcastList = new MutableLiveData<>();
-        sEpisodeList = new MutableLiveData<>();
         sEpisode = new MutableLiveData<>();
 
         PodkisSyncUtils.startImmediateSync(context);
@@ -45,20 +45,6 @@ public class PodkisRepository {
     public static void updatePodcasts(@NonNull final Context context) {
         Log.d(TAG, "updatePodcasts");
         PodkisSyncUtils.startImmediateSync(context);
-    }
-
-    public static MutableLiveData<List<Episode>> getPodcastEpisodes(@NonNull final Context context, @NonNull Long podcastId) {
-
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                PodkisDatabase podkisDatabase = PodkisDatabase.getInstance(context);
-                sEpisodeList.postValue(podkisDatabase.podkisDao().getPodcastEpisodes(podcastId));
-                return null;
-            }
-        }.execute();
-
-        return sEpisodeList;
     }
 
     public static MutableLiveData<Episode> getPodcastEpisode(@NonNull final Context context, @NonNull Long episodeId) {

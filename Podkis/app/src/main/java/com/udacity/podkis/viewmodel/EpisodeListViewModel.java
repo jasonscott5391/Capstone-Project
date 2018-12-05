@@ -1,24 +1,29 @@
 package com.udacity.podkis.viewmodel;
 
-import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.ViewModel;
+import android.arch.paging.LivePagedListBuilder;
+import android.arch.paging.PagedList;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import com.udacity.podkis.data.PodkisDatabase;
 import com.udacity.podkis.entity.Episode;
-import com.udacity.podkis.repository.PodkisRepository;
 
-import java.util.List;
+import java.util.concurrent.Executors;
 
 public class EpisodeListViewModel extends ViewModel {
 
-    private MutableLiveData<List<Episode>> mEpisodeList;
+    private LiveData<PagedList<Episode>> mEpisodeList;
 
-    public EpisodeListViewModel(@NonNull Context context, @NonNull Long podcastId) {
-        mEpisodeList = PodkisRepository.getPodcastEpisodes(context, podcastId);
+    public EpisodeListViewModel(@NonNull Context context, @NonNull Long podcastId, @NonNull int size) {
+        PodkisDatabase podkisDatabase = PodkisDatabase.getInstance(context);
+        mEpisodeList = new LivePagedListBuilder<>(podkisDatabase.podkisDao().getPodcastEpisodes(podcastId), size)
+                .setFetchExecutor(Executors.newFixedThreadPool(size))
+                .build();
     }
 
-    public MutableLiveData<List<Episode>> getEpisodeList() {
+    public LiveData<PagedList<Episode>> getEpisodeList() {
         return mEpisodeList;
     }
 }

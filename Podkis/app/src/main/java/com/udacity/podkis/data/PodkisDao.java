@@ -5,7 +5,7 @@ import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 
-import com.google.android.exoplayer2.upstream.DataSource;
+import android.arch.paging.DataSource;
 import com.udacity.podkis.entity.Podcast;
 import com.udacity.podkis.entity.Episode;
 
@@ -34,7 +34,7 @@ public interface PodkisDao {
     @Query("SELECT * FROM " + Episode.TABLE_NAME_EPISODE
             + " WHERE " + Episode.COLUMN_EPISODE_PODCAST_ID
             + " = :podcastId")
-    List<Episode> getPodcastEpisodes(long podcastId);
+    DataSource.Factory<Integer, Episode> getPodcastEpisodes(long podcastId);
 
     @Query("SELECT * FROM " + Episode.TABLE_NAME_EPISODE
             + " WHERE " + Episode.COLUMN_EPISODE_ID
