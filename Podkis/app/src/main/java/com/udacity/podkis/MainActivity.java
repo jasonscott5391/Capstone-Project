@@ -1,20 +1,22 @@
 package com.udacity.podkis;
 
 import android.app.ActivityOptions;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.ImageView;
 
-import com.udacity.podkis.entity.Podcast;
+import com.udacity.podkis.repository.PodkisRepository;
+import com.udacity.podkis.viewmodel.PodcastListViewModel;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements PodcastAdapter.PodcastClickHandler {
 
@@ -25,10 +27,15 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
     protected static final String INTENT_KEY_PODCAST_DESCRIPTION = "podcast_description";
     protected static final String INTENT_KEY_PODCAST_IMAGE_URL = "podcast_image_url";
     protected static final String INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME = "podcast_image_transition_name";
+    private static final String LAYOUT_CURRENT_POSITION = "layout_current_position";
+
+    private static int sCurrentPosition = 0;
 
     private RecyclerView mRecyclerView;
     private GridLayoutManager mGridLayoutManager;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
     private PodcastAdapter mPodcastAdapter;
+    private PodcastListViewModel mPodcastListViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,20 +51,41 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         mPodcastAdapter = new PodcastAdapter(this, this, new ArrayList<>());
         mRecyclerView.setAdapter(mPodcastAdapter);
 
-        List<Podcast> podcastList = new ArrayList<>();
-        String testTitle = getString(R.string.test_podcast_title);
-        String testDescription = getString(R.string.test_podcast_description);
-        String testImageUrl = "https://content.production.cdn.art19.com/images/07/9d/d2/a3/079dd2a3-e834-4f94-b143-7cda92ee6173/e01eb3c25bd67e61fe22b9ecf609ffa58438f7a079216d7b27f99bf478f3b3d5d6e59192efeb0fef574c20ebb7b49539231a1475d4ce6554780eace09dbd026b.jpeg";
-        for (int i = 0; i < 12; i++) {
-            Podcast podcast = new Podcast();
-            podcast.id = (long) i + 1;
-            podcast.imageUrl = testImageUrl;
-            podcast.title = testTitle;
-            podcast.description = testDescription;
-            podcastList.add(podcast);
+        mSwipeRefreshLayout = findViewById(R.id.swipe_refresh);
+        if (!mSwipeRefreshLayout.isRefreshing()) {
+            mSwipeRefreshLayout.setRefreshing(true);
         }
 
-        mPodcastAdapter.swapPodcasts(podcastList);
+        mPodcastListViewModel = ViewModelProviders.of(this).get(PodcastListViewModel.class);
+        mPodcastListViewModel.getPodcastList().observe(MainActivity.this, podcastList -> {
+            Log.d(TAG, "Updating Podcast List.");
+            sCurrentPosition = 0;
+            mPodcastAdapter.swapPodcasts(podcastList);
+            if (mSwipeRefreshLayout.isRefreshing()) {
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
+        });
+
+        mSwipeRefreshLayout.setOnRefreshListener(() -> {
+            Log.d(TAG, "Swipe to refresh Podcasts.");
+            PodkisRepository.updatePodcasts(this);
+        });
+
+        mRecyclerView.smoothScrollToPosition(sCurrentPosition);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        int currentPosition = mGridLayoutManager.findFirstVisibleItemPosition();
+        sCurrentPosition = currentPosition != -1 ? currentPosition : 0;
+        outState.putInt(LAYOUT_CURRENT_POSITION, sCurrentPosition);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        sCurrentPosition = savedInstanceState.getInt(LAYOUT_CURRENT_POSITION);
     }
 
     @Override

@@ -1,10 +1,12 @@
 package com.udacity.podkis;
 
 import android.app.NotificationManager;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -12,6 +14,9 @@ import android.support.v4.app.Fragment;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
+import android.text.Spanned;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,11 +40,14 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
+import com.udacity.podkis.entity.Episode;
+import com.udacity.podkis.viewmodel.EpisodeViewModel;
+import com.udacity.podkis.viewmodel.EpisodeViewModelFactory;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
+import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_IMAGE_URL;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_EPISODE_ID;
 
 
@@ -51,12 +59,14 @@ public class EpisodeDetailFragment extends Fragment implements ExoPlayer.EventLi
     private Context mContext;
     private OnPodcastEpisodeBackSelectedListener mOnPodcastEpisodeBackSelectedListener;
     private Long mEpisodeId;
+    private String mPodcastImageUrl;
 
     private Toolbar mToolbar;
     private TextView mEpisodeSeasonNumberTextView;
     private TextView mEpisodeNumberTextView;
     private TextView mEpisodePublishedDateTextView;
     private TextView mEpisodeDescriptionTextView;
+    private EpisodeViewModel mEpisodeViewModel;
 
     private SimpleExoPlayerView mSimpleExoPlayerView;
     private SimpleExoPlayer mSimpleExoPlayer;
@@ -97,38 +107,10 @@ public class EpisodeDetailFragment extends Fragment implements ExoPlayer.EventLi
         }
 
         mEpisodeId = bundle.getLong(INTENT_KEY_EPISODE_ID, -1L);
+        mPodcastImageUrl = bundle.getString(INTENT_KEY_PODCAST_IMAGE_URL);
 
-        mToolbar.setTitle(getString(R.string.test_episode_title));
-        mEpisodeSeasonNumberTextView.setText(String.format(Locale.getDefault(), "Season %d", Integer.valueOf(getString(R.string.test_episode_season_number).replace("Season ", ""))));
-        mEpisodeNumberTextView.setText(String.format(Locale.getDefault(), "Episode %d", Integer.valueOf(getString(R.string.test_episode_number).replace("Episode ", ""))));
-        try {
-            mEpisodePublishedDateTextView.setText(new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).parse(getString(R.string.test_episode_published_date))));
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        mEpisodeDescriptionTextView.setText(getResources().getString(R.string.test_episode_description));
-
-        String episodeImageUrl = "https://content.production.cdn.art19.com/images/8b/14/c0/af/8b14c0af-828c-4a64-9625-b164ace2fcae/67e5066ddc647cfbd4a4afd089e40d16d896c5ead04ee394d6e893ebca15b8250ba009c2dfde7ebcf5929ae62f9648bafc85cb4b32fd2e008e38d66587acc742.jpeg";
-        Picasso.get().load(episodeImageUrl).into(new Target() {
-            @Override
-            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                mSimpleExoPlayerView.setDefaultArtwork(bitmap);
-            }
-
-            @Override
-            public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-
-            }
-
-            @Override
-            public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-            }
-        });
-
-        String episodeUrl = "https://rss.art19.com/episodes/9e9abb60-285b-4ffc-a2d2-d7db399eebf6.mp3";
-        initializePlayer(Uri.parse(episodeUrl));
-        initializeMediaSession();
+        mEpisodeViewModel = ViewModelProviders.of(this, new EpisodeViewModelFactory(mContext, mEpisodeId)).get(EpisodeViewModel.class);
+        mEpisodeViewModel.getEpisode().observe(this, this::bindEpisode);
 
         return view;
     }
@@ -190,12 +172,60 @@ public class EpisodeDetailFragment extends Fragment implements ExoPlayer.EventLi
 
     @Override
     public void onPlayerError(ExoPlaybackException error) {
-
+        Log.e(TAG, error.getMessage());
     }
 
     @Override
     public void onPositionDiscontinuity() {
 
+    }
+
+    private void bindEpisode(Episode episode) {
+        Log.d(TAG, String.format("bindEpisode - episode:%s", episode));
+        if (episode != null
+                && !episode.id.equals(mEpisodeId)) {
+            return;
+        }
+        mToolbar.setTitle(episode.title);
+        if (episode.seasonNumber != null) {
+            mEpisodeSeasonNumberTextView.setText(String.format(Locale.getDefault(), "Season %d", Integer.valueOf(episode.seasonNumber)));
+        }
+        mEpisodeNumberTextView.setText(String.format(Locale.getDefault(), "Episode %d", Integer.valueOf(episode.episodeNumber)));
+        mEpisodePublishedDateTextView.setText(new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(episode.publishedDate));
+        Spanned html;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            html = Html.fromHtml(episode.description, Html.FROM_HTML_MODE_COMPACT);
+        } else {
+            html = Html.fromHtml(episode.description);
+        }
+        mEpisodeDescriptionTextView.setText(html);
+        String episodeImageUrl = episode.imageUrl;
+        if (episodeImageUrl == null
+                || episodeImageUrl.isEmpty()) {
+            episodeImageUrl = mPodcastImageUrl;
+        }
+        Picasso.get()
+                .load(episodeImageUrl)
+                .into(new Target() {
+                    @Override
+                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                        mSimpleExoPlayerView.setDefaultArtwork(bitmap);
+                    }
+
+                    @Override
+                    public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+                    }
+
+                    @Override
+                    public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                    }
+                });
+
+        String episodeUrl = episode.url;
+        initializePlayer(Uri.parse(episodeUrl));
+        initializeMediaSession();
     }
 
     private void initializePlayer(Uri uri) {

@@ -5,6 +5,7 @@ import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.OnConflictStrategy;
 import android.arch.persistence.room.Query;
 
+import com.google.android.exoplayer2.upstream.DataSource;
 import com.udacity.podkis.entity.Podcast;
 import com.udacity.podkis.entity.Episode;
 
@@ -30,12 +31,13 @@ public interface PodkisDao {
     @Query("SELECT * FROM " + Podcast.TABLE_NAME_PODCAST)
     List<Podcast> getPodcasts();
 
-    @Query("SELECT " + Episode.TABLE_NAME_EPISODE + ".*, "
-            + Podcast.TABLE_NAME_PODCAST + "." + Podcast.COLUMN_PODCAST_IMAGE_URL
-            + " FROM " + Episode.TABLE_NAME_EPISODE
-            + " INNER JOIN " + Podcast.TABLE_NAME_PODCAST
-            + " ON (" + Podcast.TABLE_NAME_PODCAST + "." + Podcast.COLUMN_PODCAST_ID + " = " + Episode.TABLE_NAME_EPISODE + "." + Episode.COLUMN_EPISODE_PODCAST_ID + ")"
+    @Query("SELECT * FROM " + Episode.TABLE_NAME_EPISODE
             + " WHERE " + Episode.COLUMN_EPISODE_PODCAST_ID
             + " = :podcastId")
     List<Episode> getPodcastEpisodes(long podcastId);
+
+    @Query("SELECT * FROM " + Episode.TABLE_NAME_EPISODE
+            + " WHERE " + Episode.COLUMN_EPISODE_ID
+            + " = :episodeId")
+    Episode getPodcastEpisode(long episodeId);
 }
