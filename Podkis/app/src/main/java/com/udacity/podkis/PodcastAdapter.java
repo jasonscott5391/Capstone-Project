@@ -40,7 +40,10 @@ public class PodcastAdapter extends RecyclerView.Adapter<PodcastAdapter.PodcastV
         String imageUrl = podcast.imageUrl;
         if (imageUrl != null
                 && !imageUrl.isEmpty()) {
-            Picasso.get().load(imageUrl).into(holder.mPodcastThumbnail);
+            Picasso.get()
+                    .load(imageUrl)
+                    .placeholder(ContextCompat.getDrawable(mContext, R.drawable.web_hi_res_512_square))
+                    .into(holder.mPodcastThumbnail);
         } else {
             holder.mPodcastThumbnail.setImageDrawable(ContextCompat.getDrawable(mContext, R.drawable.web_hi_res_512));
         }

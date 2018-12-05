@@ -1,5 +1,6 @@
 package com.udacity.podkis;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -9,6 +10,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
+import android.text.Spanned;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,13 +21,10 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
-import com.udacity.podkis.entity.Episode;
+import com.udacity.podkis.viewmodel.EpisodeListViewModel;
+import com.udacity.podkis.viewmodel.EpisodeListViewModelFactory;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_DESCRIPTION;
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_ID;
@@ -47,6 +47,7 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
     private LinearLayoutManager mLinearLayoutManager;
     private EpisodeAdapter mEpisodeAdapter;
     private ImageView mPodcastDetailImageView;
+    private EpisodeListViewModel mEpisodeListViewModel;
 
     private Long mPodcastId;
     private String mPodcastTitle;
@@ -103,46 +104,44 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
         }
 
         mCollapsingToolbarLayout.setTitle(mPodcastTitle);
-        mPodcastEpisodeDescription.setText(mPodcastDescription);
+
+        Spanned html;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            html = Html.fromHtml(mPodcastDescription, Html.FROM_HTML_MODE_COMPACT);
+        } else {
+            html = Html.fromHtml(mPodcastDescription);
+        }
+        mPodcastEpisodeDescription.setText(html);
 
         String imageUrl = bundle.getString(INTENT_KEY_PODCAST_IMAGE_URL);
+        mEpisodeAdapter.setPodcastImageUrl(imageUrl);
+
         if (imageUrl != null
                 && !imageUrl.isEmpty()) {
-            Picasso.get().load(imageUrl).noFade().into(mPodcastDetailImageView, new Callback() {
-                @Override
-                public void onSuccess() {
-                    getActivity().supportStartPostponedEnterTransition();
-                }
+            Picasso.get()
+                    .load(imageUrl)
+                    .noFade()
+                    .placeholder(ContextCompat.getDrawable(context, R.drawable.web_hi_res_512_square))
+                    .into(mPodcastDetailImageView, new Callback() {
+                        @Override
+                        public void onSuccess() {
+                            getActivity().supportStartPostponedEnterTransition();
+                        }
 
-                @Override
-                public void onError(Exception e) {
-                    getActivity().supportStartPostponedEnterTransition();
-                }
-            });
+                        @Override
+                        public void onError(Exception e) {
+                            getActivity().supportStartPostponedEnterTransition();
+                        }
+                    });
         } else {
             mPodcastDetailImageView.setImageDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.ic_launcher_square));
         }
 
-        List<Episode> episodeList = new ArrayList<>();
-        String testImageUrl = "https://content.production.cdn.art19.com/images/8b/14/c0/af/8b14c0af-828c-4a64-9625-b164ace2fcae/67e5066ddc647cfbd4a4afd089e40d16d896c5ead04ee394d6e893ebca15b8250ba009c2dfde7ebcf5929ae62f9648bafc85cb4b32fd2e008e38d66587acc742.jpeg";
-        for (int i = 0; i < 9; i++) {
-            Episode episode = new Episode();
-            episode.id = (long) i + 1;
-            episode.title = getString(R.string.test_episode_title);
-            episode.seasonNumber = Integer.valueOf(getString(R.string.test_episode_season_number).replace("Season ", ""));
-            episode.episodeNumber = Integer.valueOf(getString(R.string.test_episode_number).replace("Episode ", ""));
-            try {
-                episode.publishedDate = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).parse(getString(R.string.test_episode_published_date));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-
-            episode.imageUrl = testImageUrl;
-
-            episodeList.add(episode);
-        }
-
-        mEpisodeAdapter.swapEpisodes(episodeList);
+        mEpisodeListViewModel = ViewModelProviders.of(this, new EpisodeListViewModelFactory(context, mPodcastId)).get(EpisodeListViewModel.class);
+        mEpisodeListViewModel.getEpisodeList().observe(this, episodeList -> {
+            Log.d(TAG, "Updating Episode List.");
+            mEpisodeAdapter.swapEpisodes(episodeList);
+        });
 
         return view;
     }

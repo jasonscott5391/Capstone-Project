@@ -2,12 +2,14 @@ package com.udacity.podkis.entity;
 
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 import android.provider.BaseColumns;
 
+import static com.udacity.podkis.entity.Podcast.COLUMN_PODCAST_TITLE;
 import static com.udacity.podkis.entity.Podcast.TABLE_NAME_PODCAST;
 
-@Entity(tableName = TABLE_NAME_PODCAST)
+@Entity(tableName = TABLE_NAME_PODCAST, indices = @Index(value = COLUMN_PODCAST_TITLE, unique = true))
 public class Podcast {
 
     public static final String TABLE_NAME_PODCAST = "podcast";
