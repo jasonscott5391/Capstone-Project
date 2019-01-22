@@ -1,5 +1,6 @@
 package com.udacity.podkis.sync;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.udacity.podkis.data.PodkisDao;
@@ -15,6 +16,9 @@ import com.udacity.podkis.service.RssWrapper;
 import org.simpleframework.xml.convert.AnnotationStrategy;
 import org.simpleframework.xml.core.Persister;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,13 +45,8 @@ public class PodkisSyncTask {
             .build()
             .create(PodkisService.class);
 
-    static synchronized void syncPodkis(PodkisDao podkisDao) {
+    static synchronized void syncPodkis(PodkisDao podkisDao, SharedPreferences sharedPreferences) {
         Log.d(TAG, String.format("syncPodkis - Preparing request PODCASTS: %s", Arrays.toString(PODCASTS)));
-
-        if (podkisDao.getPodcastCount() > 0) {
-            PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
-            return;
-        }
 
         try {
             for (String podcastString : PODCASTS) {
@@ -68,6 +67,20 @@ public class PodkisSyncTask {
                 if (podcastWrapper == null) {
                     throw new Exception("podcastWrapper is null!");
                 }
+
+                // Check checksum to determine if content has changed since last refresh.
+                String previousChecksum = sharedPreferences.getString(podcastString, null);
+                String checksum = calculateChecksum(podcastWrapper);
+                if (checksum != null
+                        && checksum.equals(previousChecksum)) {
+                    PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
+                    return;
+                }
+
+                // Commit latest checksum.
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString(podcastString, checksum);
+                editor.apply();
 
                 // Transform to and Insert Podcast first.
                 Podcast podcast = new Podcast();
@@ -126,6 +139,31 @@ public class PodkisSyncTask {
             Log.e(TAG, String.format("syncPodkis - exception:%s", e.getMessage()));
             PodkisRepository.getPodcastList().postValue(null);
         }
+    }
 
+    private static String calculateChecksum(Object object) {
+        String checksum = null;
+
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+
+            // Object to stream.
+            objectOutputStream.writeObject(object);
+
+            // Calculate checksum.
+            StringBuilder stringBuilder = new StringBuilder();
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            for (byte b : messageDigest.digest(byteArrayOutputStream.toByteArray())) {
+                stringBuilder.append(String.format("%02x", b));
+            }
+            checksum = stringBuilder.toString();
+            Log.d(TAG, String.format("calculateChecksum - Calculated checksum %s", checksum));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
+        }
+
+        return checksum;
     }
 }

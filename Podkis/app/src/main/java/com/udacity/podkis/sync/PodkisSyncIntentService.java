@@ -3,11 +3,13 @@ package com.udacity.podkis.sync;
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.udacity.podkis.R;
 import com.udacity.podkis.data.PodkisDatabase;
 
 public class PodkisSyncIntentService extends IntentService {
@@ -36,7 +38,11 @@ public class PodkisSyncIntentService extends IntentService {
             return;
         }
 
-        PodkisDatabase podkisDatabase = PodkisDatabase.getInstance(this.getApplication());
-        PodkisSyncTask.syncPodkis(podkisDatabase.podkisDao());
+        Context context = this.getApplication();
+
+        PodkisDatabase podkisDatabase = PodkisDatabase.getInstance(context);
+
+        SharedPreferences sharedPreferences = context.getSharedPreferences(getString(R.string.podcast_checksum_prefs), Context.MODE_PRIVATE);
+        PodkisSyncTask.syncPodkis(podkisDatabase.podkisDao(), sharedPreferences);
     }
 }
