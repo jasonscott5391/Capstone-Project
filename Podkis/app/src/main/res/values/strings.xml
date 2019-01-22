@@ -4,7 +4,7 @@
     <string name="podcast_detail_image_content_description">Podcast image</string>
     <string name="podcast_podcast_description_label">Description</string>
     <string name="podcast_episode_label">Episodes</string>
-    <string name="action_refreshing">Refreshing…</string>
+    <string name="action_refreshing">Refreshing podcasts…</string>
     <string name="podcast_checksum_prefs">podcast_checksum_prefs</string>
 
 

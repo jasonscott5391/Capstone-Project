@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
 
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
             Log.d(TAG, "Swipe to refresh Podcasts.");
+            Snackbar.make(mSwipeRefreshLayout, getString(R.string.action_refreshing), Snackbar.LENGTH_INDEFINITE).show();
             PodkisRepository.updatePodcasts(this);
         });
 
