@@ -4,6 +4,7 @@ import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
+import java.io.Serializable;
 import java.util.List;
 
 import static com.udacity.podkis.service.EnclosureWrapper.SERIALIZED_PODCAST_EPISODE_ENCLOSURE;
@@ -11,7 +12,7 @@ import static com.udacity.podkis.service.EpisodeWrapper.SERIALIZED_PODCAST_EPISO
 import static com.udacity.podkis.service.ImageWrapper.SERIALIZED_PODCAST_EPISODE_IMAGE;
 
 @Root(name = SERIALIZED_PODCAST_EPISODE_ROOT, strict = false)
-public class EpisodeWrapper {
+public class EpisodeWrapper implements Serializable {
 
     static final String SERIALIZED_PODCAST_EPISODE_ROOT = "item";
     private static final String SERIALIZED_PODCAST_EPISODE_TITLE = "title";

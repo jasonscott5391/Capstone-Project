@@ -6,6 +6,7 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +21,7 @@ import com.udacity.podkis.repository.PodkisRepository;
 import com.udacity.podkis.viewmodel.PodcastListViewModel;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements PodcastAdapter.PodcastClickHandler {
 
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
     private static final String LAYOUT_CURRENT_POSITION = "layout_current_position";
 
     private static int sCurrentPosition = 0;
+    private static int sNumPodcasts = 0;
 
     private RecyclerView mRecyclerView;
     private GridLayoutManager mGridLayoutManager;
@@ -57,18 +60,15 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         mRecyclerView.setAdapter(mPodcastAdapter);
 
         mSwipeRefreshLayout = findViewById(R.id.swipe_refresh);
-        if (!mSwipeRefreshLayout.isRefreshing()) {
-            mSwipeRefreshLayout.setRefreshing(true);
-        }
+        updateRefreshingUi();
 
         mPodcastListViewModel = ViewModelProviders.of(this).get(PodcastListViewModel.class);
         mPodcastListViewModel.getPodcastList().observe(MainActivity.this, podcastList -> {
             Log.d(TAG, "Updating Podcast List.");
             sCurrentPosition = 0;
+            sNumPodcasts = podcastList != null ? podcastList.size() : 0;
             mPodcastAdapter.swapPodcasts(podcastList);
-            if (mSwipeRefreshLayout.isRefreshing()) {
-                mSwipeRefreshLayout.setRefreshing(false);
-            }
+            updateRefreshingUi();
         });
 
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
@@ -131,4 +131,18 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         return (int) (percent * availableMemory / 100);
     }
 
+    private void updateRefreshingUi() {
+        String message;
+        int length;
+        if (mSwipeRefreshLayout.isRefreshing()) {
+            mSwipeRefreshLayout.setRefreshing(false);
+            message = String.format(Locale.getDefault(), "%d podcast(s) refreshed!", sNumPodcasts);
+            length = Snackbar.LENGTH_SHORT;
+        } else {
+            mSwipeRefreshLayout.setRefreshing(true);
+            message = getString(R.string.action_refreshing);
+            length = Snackbar.LENGTH_INDEFINITE;
+        }
+        Snackbar.make(mSwipeRefreshLayout, message, length).show();
+    }
 }
