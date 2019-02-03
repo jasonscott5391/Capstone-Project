@@ -28,7 +28,7 @@ public class EpisodeWrapper implements Serializable {
     @Element(name = SERIALIZED_PODCAST_EPISODE_DESCRIPTION, data = true)
     public String description;
 
-    @Element(name = SERIALIZED_PODCAST_EPISODE_NUMBER)
+    @Element(name = SERIALIZED_PODCAST_EPISODE_NUMBER, required = false)
     public Integer episodeNumber;
 
     @Element(name = SERIALIZED_PODCAST_EPISODE_SEASON_NUMBER, required = false)

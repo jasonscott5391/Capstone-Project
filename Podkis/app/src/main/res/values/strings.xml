@@ -6,7 +6,9 @@
     <string name="podcast_episode_label">Episodes</string>
     <string name="action_refreshing">Refreshing podcasts…</string>
     <string name="podcast_checksum_prefs">podcast_checksum_prefs</string>
-
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="restart">Restart</string>
 
     <!-- Test Strings for UI Design -->
     <string name="test_podcast_title">StarTalk Radio</string>
