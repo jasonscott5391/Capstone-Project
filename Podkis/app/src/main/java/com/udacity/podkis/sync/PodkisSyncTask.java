@@ -34,7 +34,9 @@ public class PodkisSyncTask {
     private static final String TAG = PodkisSyncTask.class.getSimpleName();
     private static final String BASE_RSS_URL = "https://rss.art19.com";
     private static final String[] PODCASTS = new String[]{
-            "startalk-radio"
+            "startalk-radio",
+            "conan-obrien",
+            "the-daily"
     };
 
     private static final DateFormat sDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault());
@@ -133,12 +135,11 @@ public class PodkisSyncTask {
 
             }
 
-            PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
-
         } catch (Exception e) {
             Log.e(TAG, String.format("syncPodkis - exception:%s", e.getMessage()));
-            PodkisRepository.getPodcastList().postValue(null);
         }
+
+        PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
     }
 
     private static String calculateChecksum(Object object) {
@@ -161,7 +162,7 @@ public class PodkisSyncTask {
 
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, String.format("calculateChecksum - exception:%s", e.getMessage()));
         }
 
         return checksum;

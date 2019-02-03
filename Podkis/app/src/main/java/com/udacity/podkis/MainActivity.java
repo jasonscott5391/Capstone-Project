@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
     protected static final String INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME = "podcast_image_transition_name";
     private static final String LAYOUT_CURRENT_POSITION = "layout_current_position";
 
+    private static boolean sPicassoInitialized = false;
     private static int sCurrentPosition = 0;
     private static int sNumPodcasts = 0;
 
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Picasso.setSingletonInstance(initCustomPicasso());
+        initCustomPicasso();
 
         mGridLayoutManager = new GridLayoutManager(this, getResources().getInteger(R.integer.podcast_column_count));
 
@@ -104,7 +105,8 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         episodeDetailIntent.putExtra(INTENT_KEY_PODCAST_DESCRIPTION, description);
         episodeDetailIntent.putExtra(INTENT_KEY_PODCAST_IMAGE_URL, imageUrl);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (getResources().getConfiguration().smallestScreenWidthDp < 600
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             episodeDetailIntent.putExtra(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME, ViewCompat.getTransitionName(sharedImageView));
             startActivity(episodeDetailIntent,
                     ActivityOptions.makeSceneTransitionAnimation(MainActivity.this,
@@ -115,19 +117,24 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         }
     }
 
-    private Picasso initCustomPicasso() {
+    private void initCustomPicasso() {
+        if (sPicassoInitialized) {
+            return;
+        }
+
         Picasso.Builder builder = new Picasso.Builder(this);
         builder.memoryCache(new LruCache(getBytesForMemCache(12)));
-        return builder.build();
+        Picasso.setSingletonInstance(builder.build());
+        sPicassoInitialized = true;
     }
 
     private int getBytesForMemCache(int percent) {
-        ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
         ActivityManager activityManager = (ActivityManager)
                 getSystemService(ACTIVITY_SERVICE);
-        activityManager.getMemoryInfo(mi);
+        activityManager.getMemoryInfo(memoryInfo);
 
-        double availableMemory = mi.availMem;
+        double availableMemory = memoryInfo.availMem;
 
         return (int) (percent * availableMemory / 100);
     }

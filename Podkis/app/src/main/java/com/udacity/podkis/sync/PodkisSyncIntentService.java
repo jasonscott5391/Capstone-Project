@@ -10,7 +10,9 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.udacity.podkis.R;
+import com.udacity.podkis.data.PodkisDao;
 import com.udacity.podkis.data.PodkisDatabase;
+import com.udacity.podkis.repository.PodkisRepository;
 
 public class PodkisSyncIntentService extends IntentService {
 
@@ -33,16 +35,18 @@ public class PodkisSyncIntentService extends IntentService {
             activeNetwork = cm.getActiveNetworkInfo();
         }
 
+        Context context = this.getApplication();
+        PodkisDatabase podkisDatabase = PodkisDatabase.getInstance(context);
+        PodkisDao podkisDao = podkisDatabase.podkisDao();
+
         if (activeNetwork == null ||
                 !activeNetwork.isConnectedOrConnecting()) {
+            PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
+            Log.d(TAG, "onHandleIntent - Network is not connected!");
             return;
         }
 
-        Context context = this.getApplication();
-
-        PodkisDatabase podkisDatabase = PodkisDatabase.getInstance(context);
-
         SharedPreferences sharedPreferences = context.getSharedPreferences(getString(R.string.podcast_checksum_prefs), Context.MODE_PRIVATE);
-        PodkisSyncTask.syncPodkis(podkisDatabase.podkisDao(), sharedPreferences);
+        PodkisSyncTask.syncPodkis(podkisDao, sharedPreferences);
     }
 }

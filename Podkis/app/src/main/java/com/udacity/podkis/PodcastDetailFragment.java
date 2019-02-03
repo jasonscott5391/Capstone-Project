@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -35,6 +36,9 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
 
     protected static final String TAG = PodcastDetailFragment.class.getSimpleName();
     protected static final String INTENT_KEY_EPISODE_ID = "episode_id";
+    protected static final String INTENT_KEY_IS_DUAL_PANE = "is_dual_pane";
+
+    private static boolean sIsDualPane;
 
     private OnEpisodeSelectedListener mOnEpisodeSelectedListener;
 
@@ -73,12 +77,25 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
 
         Context context = getContext();
 
-        mCollapsingToolbarLayout = view.findViewById(R.id.detail_collapsing_toolbar_layout);
-        mToolbar = view.findViewById(R.id.detail_toolbar);
-        mToolbar.setNavigationOnClickListener(v -> getActivity().onBackPressed());
+        Bundle bundle = getArguments();
+        if (bundle == null) {
+            bundle = getActivity().getIntent().getExtras();
+        }
+
+        sIsDualPane = bundle.getBoolean(INTENT_KEY_IS_DUAL_PANE, false);
+        mPodcastId = bundle.getLong(INTENT_KEY_PODCAST_ID, -1L);
+        mPodcastTitle = bundle.getString(INTENT_KEY_PODCAST_TITLE, getString(R.string.app_name));
+        mPodcastDescription = bundle.getString(INTENT_KEY_PODCAST_DESCRIPTION, "");
+
+        if (!sIsDualPane) {
+            mCollapsingToolbarLayout = view.findViewById(R.id.detail_collapsing_toolbar_layout);
+            mCollapsingToolbarLayout.setTitle(mPodcastTitle);
+            mToolbar = view.findViewById(R.id.detail_toolbar);
+            mToolbar.setNavigationOnClickListener(v -> getActivity().onBackPressed());
+            mPodcastDetailImageView = view.findViewById(R.id.podcast_detail_image);
+        }
 
         mPodcastEpisodeDescription = view.findViewById(R.id.podcast_episode_description);
-        mPodcastDetailImageView = view.findViewById(R.id.podcast_detail_image);
         mRecyclerView = view.findViewById(R.id.episode_recycler_view);
 
         mLinearLayoutManager = new LinearLayoutManager(context);
@@ -86,21 +103,11 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
 
         mEpisodeAdapter = new EpisodeAdapter(context, this);
 
-        Bundle bundle = getArguments();
-        if (bundle == null) {
-            bundle = getActivity().getIntent().getExtras();
-        }
-
-        mPodcastId = bundle.getLong(INTENT_KEY_PODCAST_ID, -1L);
-        mPodcastTitle = bundle.getString(INTENT_KEY_PODCAST_TITLE, getString(R.string.app_name));
-        mPodcastDescription = bundle.getString(INTENT_KEY_PODCAST_DESCRIPTION, "");
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (!sIsDualPane
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             String imageTransitionName = bundle.getString(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME, "");
             mPodcastDetailImageView.setTransitionName(imageTransitionName);
         }
-
-        mCollapsingToolbarLayout.setTitle(mPodcastTitle);
 
         Spanned html;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -110,10 +117,11 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
         }
         mPodcastEpisodeDescription.setText(html);
 
+
         String imageUrl = bundle.getString(INTENT_KEY_PODCAST_IMAGE_URL);
         mEpisodeAdapter.setPodcastImageUrl(imageUrl);
-
-        if (imageUrl != null
+        if (!sIsDualPane
+                && imageUrl != null
                 && !imageUrl.isEmpty()) {
             Picasso.get()
                     .load(imageUrl)
@@ -122,15 +130,21 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
                     .into(mPodcastDetailImageView, new Callback() {
                         @Override
                         public void onSuccess() {
-                            getActivity().supportStartPostponedEnterTransition();
+                            FragmentActivity fragmentActivity = getActivity();
+                            if (fragmentActivity != null) {
+                                fragmentActivity.supportStartPostponedEnterTransition();
+                            }
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            getActivity().supportStartPostponedEnterTransition();
+                            FragmentActivity fragmentActivity = getActivity();
+                            if (fragmentActivity != null) {
+                                fragmentActivity.supportStartPostponedEnterTransition();
+                            }
                         }
                     });
-        } else {
+        } else if (!sIsDualPane) {
             mPodcastDetailImageView.setImageDrawable(ContextCompat.getDrawable(getContext(), R.mipmap.ic_launcher_square));
         }
 
@@ -156,8 +170,10 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
 
     @Override
     public void onClickEpisode(Long id) {
-        Log.d(TAG, String.format("onClickEpisode - id:%d", id));
-        mOnEpisodeSelectedListener.onEpisodeSelected(id);
+        Log.d(TAG, String.format("onClickEpisode - id:%d ,mOnEpisodeSelectedListener:%s", id, mOnEpisodeSelectedListener));
+        if (mOnEpisodeSelectedListener != null) {
+            mOnEpisodeSelectedListener.onEpisodeSelected(id);
+        }
     }
 
     public interface OnEpisodeSelectedListener {

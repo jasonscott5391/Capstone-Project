@@ -74,7 +74,11 @@ public class EpisodeAdapter extends PagedListAdapter<Episode, EpisodeAdapter.Epi
                                 double aspectRatio = (double) source.getHeight() / (double) source.getWidth();
                                 int targetWidth = holder.mEpisodeImage.getWidth();
                                 int targetHeight = (int) (targetWidth * aspectRatio);
-                                Bitmap result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                                Bitmap result = source;
+                                if (targetWidth > 0
+                                        && targetHeight > 0) {
+                                    result = Bitmap.createScaledBitmap(source, targetWidth, targetHeight, false);
+                                }
                                 if (result != source) {
                                     source.recycle();
                                 }
@@ -94,12 +98,18 @@ public class EpisodeAdapter extends PagedListAdapter<Episode, EpisodeAdapter.Epi
 
 
             holder.mEpisodeTitle.setText(episode.title);
+
             if (episode.seasonNumber != null) {
                 holder.mEpisodeSeasonNumber.setText(String.format(Locale.getDefault(), "Season %d", episode.seasonNumber));
             } else {
                 holder.mEpisodeSeasonNumber.setVisibility(View.GONE);
             }
-            holder.mEpisodeNumber.setText(String.format(Locale.getDefault(), "Episode %d", episode.episodeNumber));
+
+            if (episode.episodeNumber != null) {
+                holder.mEpisodeNumber.setText(String.format(Locale.getDefault(), "Episode %d", episode.episodeNumber));
+            } else {
+                holder.mEpisodeNumber.setVisibility(View.GONE);
+            }
 
             // Format published date.
             holder.mEpisodePublishedDate.setText(new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(episode.publishedDate));

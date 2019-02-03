@@ -26,7 +26,9 @@ public class PodkisServiceTest {
 
     private static final String BASE_RSS_URL = "https://rss.art19.com";
     private static final String[] PODCASTS = new String[]{
-            "startalk-radio"
+            "startalk-radio",
+            "conan-obrien",
+            "the-daily"
     };
 
     private static PodkisService sPodkisService;
@@ -57,7 +59,6 @@ public class PodkisServiceTest {
                 assertNotNull(episodeWrapper.title);
                 assertNotNull(episodeWrapper.description);
                 assertNotNull(episodeWrapper.duration);
-                assertNotNull(episodeWrapper.episodeNumber);
                 assertNotNull(episodeWrapper.publishedDate);
                 assertNotNull(episodeWrapper.image);
                 assertNotNull(episodeWrapper.image.imageUrl);
