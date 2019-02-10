@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/MyTheme">
         <service
-            android:name=".sync.PodkisSyncIntentService"
+            android:name=".sync.PodkisSyncService"
             android:exported="false" />
 
         <activity

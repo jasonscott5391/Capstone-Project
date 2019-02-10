@@ -56,7 +56,8 @@
 
         <android.support.constraint.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:focusable="true">
 
             <TextView
                 android:id="@+id/podcast_description_label"
@@ -64,18 +65,19 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:layout_marginTop="8dp"
-                android:text="@string/podcast_podcast_description_label"
+                android:text="@string/podcast_description_label"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
-                android:id="@+id/podcast_episode_description"
+                android:id="@+id/podcast_description"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
+                android:contentDescription="@string/podcast_description_content_description"
                 android:textSize="18sp"
                 app:layout_constrainedWidth="true"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -93,13 +95,14 @@
                 android:textSize="24sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/podcast_episode_description" />
+                app:layout_constraintTop_toBottomOf="@+id/podcast_description" />
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/episode_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginTop="8dp"
+                android:contentDescription="@string/podcast_episode_label"
                 android:scrollbars="vertical"
                 app:layout_constraintTop_toBottomOf="@id/podcast_episode_label" />
         </android.support.constraint.ConstraintLayout>

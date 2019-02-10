@@ -13,7 +13,8 @@
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:focusable="true">
 
         <ImageView
             android:id="@+id/episode_image"
@@ -33,12 +34,13 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
+            android:contentDescription="@string/episode_title_content_description"
             android:textSize="24sp"
             android:textStyle="bold"
-            app:layout_constraintStart_toEndOf="@id/episode_image"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constrainedWidth="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/episode_image"
+            app:layout_constraintTop_toTopOf="parent"
             tools:text="@string/test_episode_title" />
 
         <TextView
@@ -48,6 +50,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
+            android:contentDescription="@string/season_number_content_description"
             android:textSize="18sp"
             app:layout_constraintStart_toEndOf="@id/episode_image"
             app:layout_constraintTop_toBottomOf="@id/episode_title"
@@ -60,6 +63,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
+            android:contentDescription="@string/episode_number_content_description"
             android:textSize="18sp"
             app:layout_constraintStart_toEndOf="@id/episode_season_number"
             app:layout_constraintTop_toBottomOf="@id/episode_title"
@@ -71,6 +75,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
+            android:contentDescription="@string/episode_published_date_content_description"
             android:textSize="18sp"
             android:textStyle="italic"
             app:layout_constraintStart_toEndOf="@id/episode_image"

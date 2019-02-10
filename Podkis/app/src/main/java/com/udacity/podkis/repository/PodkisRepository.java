@@ -35,6 +35,15 @@ public class PodkisRepository {
         sPodcastList = new MutableLiveData<>();
         sEpisode = new MutableLiveData<>();
 
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                PodkisDatabase podkisDatabase = PodkisDatabase.getInstance(context);
+                sPodcastList.postValue(podkisDatabase.podkisDao().getPodcasts());
+                return null;
+            }
+        }.execute();
+
         PodkisSyncUtils.startImmediateSync(context);
     }
 

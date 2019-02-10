@@ -95,7 +95,7 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
             mPodcastDetailImageView = view.findViewById(R.id.podcast_detail_image);
         }
 
-        mPodcastEpisodeDescription = view.findViewById(R.id.podcast_episode_description);
+        mPodcastEpisodeDescription = view.findViewById(R.id.podcast_description);
         mRecyclerView = view.findViewById(R.id.episode_recycler_view);
 
         mLinearLayoutManager = new LinearLayoutManager(context);
