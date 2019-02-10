@@ -33,13 +33,9 @@ import retrofit2.converter.simplexml.SimpleXmlConverterFactory;
 public class PodkisSyncTask {
     private static final String TAG = PodkisSyncTask.class.getSimpleName();
     private static final String BASE_RSS_URL = "https://rss.art19.com";
-    private static final String[] PODCASTS = new String[]{
-            "startalk-radio",
-            "conan-obrien",
-            "the-daily"
-    };
-
     private static final DateFormat sDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault());
+    private static final int MAX_EPISODES = 30;
+    private static final int EPISODE_BATCH_SIZE = 10;
 
     private static PodkisService sPodkisService = new Retrofit.Builder()
             .baseUrl(BASE_RSS_URL)
@@ -47,92 +43,104 @@ public class PodkisSyncTask {
             .build()
             .create(PodkisService.class);
 
-    static synchronized void syncPodkis(PodkisDao podkisDao, SharedPreferences sharedPreferences) {
-        Log.d(TAG, String.format("syncPodkis - Preparing request PODCASTS: %s", Arrays.toString(PODCASTS)));
+    static synchronized void syncPodkis(PodkisDao podkisDao, SharedPreferences sharedPreferences, String podcastString) {
+        final long START_MS = System.currentTimeMillis();
+
+        Log.d(TAG, String.format("syncPodkis - Preparing request podcastString: %s", podcastString));
+//        PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
 
         try {
-            for (String podcastString : PODCASTS) {
 
-                Response<RssWrapper> response = sPodkisService.getPodcastRss(podcastString).execute();
-                Log.d(TAG, String.format("syncPodkis - Podcast: %s, response.code:%s, response.body:%s, response.errorBody:%s",
-                        podcastString,
-                        response.code(),
-                        response.body(),
-                        response.errorBody()));
+            Response<RssWrapper> response = sPodkisService.getPodcastRss(podcastString).execute();
+            Log.d(TAG, String.format("syncPodkis - Podcast: %s, response.code:%s, response.body:%s, response.errorBody:%s",
+                    podcastString,
+                    response.code(),
+                    response.body(),
+                    response.errorBody()));
 
-                RssWrapper rssWrapper = response.body();
-                if (rssWrapper == null) {
-                    throw new Exception("rssWrapper is null!");
+            RssWrapper rssWrapper = response.body();
+            if (rssWrapper == null) {
+                throw new Exception("rssWrapper is null!");
+            }
+
+            PodcastWrapper podcastWrapper = rssWrapper.podcastWrapper;
+            if (podcastWrapper == null) {
+                throw new Exception("podcastWrapper is null!");
+            }
+
+            // Check checksum to determine if content has changed since last refresh.
+            String previousChecksum = sharedPreferences.getString(podcastString, null);
+            String checksum = calculateChecksum(podcastWrapper);
+            if (checksum != null
+                    && checksum.equals(previousChecksum)) {
+                PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
+                return;
+            }
+
+            // Commit latest checksum.
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(podcastString, checksum);
+            editor.apply();
+
+            // Transform to and Insert Podcast first.
+            Podcast podcast = new Podcast();
+            podcast.title = podcastWrapper.title;
+            podcast.description = podcastWrapper.description;
+            podcast.author = podcastWrapper.author;
+            for (ImageWrapper imageWrapper : podcastWrapper.image) {
+                String imageUrl;
+                if (imageWrapper.imageUrl != null) {
+                    imageUrl = imageWrapper.imageUrl;
+                } else {
+                    imageUrl = imageWrapper.url;
                 }
-
-                PodcastWrapper podcastWrapper = rssWrapper.podcastWrapper;
-                if (podcastWrapper == null) {
-                    throw new Exception("podcastWrapper is null!");
+                if (imageUrl != null) {
+                    podcast.imageUrl = imageUrl;
+                    break;
                 }
+            }
 
-                // Check checksum to determine if content has changed since last refresh.
-                String previousChecksum = sharedPreferences.getString(podcastString, null);
-                String checksum = calculateChecksum(podcastWrapper);
-                if (checksum != null
-                        && checksum.equals(previousChecksum)) {
-                    PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
-                    return;
+            long podcastId = podkisDao.insertPodcast(podcast);
+            Log.d(TAG, String.format("syncPodkis - Podcast inserted with ID %d", podcastId));
+
+            // Generate List of Episodes, set parent ID, and insert.
+            List<Episode> episodeList = new ArrayList<>();
+            forEpisodeWrapperList:
+            for (EpisodeWrapper episodeWrapper : podcastWrapper.episodeWrapperList) {
+                Episode episode = new Episode();
+                episode.podcastId = podcastId;
+                episode.title = episodeWrapper.title.get(0);
+                episode.description = episodeWrapper.description;
+                episode.seasonNumber = episodeWrapper.seasonNumber;
+                episode.episodeNumber = episodeWrapper.episodeNumber;
+                episode.publishedDate = sDateFormat.parse(episodeWrapper.publishedDate);
+                episode.duration = episodeWrapper.duration;
+                episode.url = episodeWrapper.enclosure.url;
+                String episodeImageUrl;
+                if ((episodeImageUrl = episodeWrapper.image.url) == null) {
+                    episodeImageUrl = episodeWrapper.image.imageUrl;
                 }
+                episode.imageUrl = episodeImageUrl;
 
-                // Commit latest checksum.
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString(podcastString, checksum);
-                editor.apply();
+                episodeList.add(episode);
+                switch (episodeList.size()) {
+                    case EPISODE_BATCH_SIZE:
+                        // Insert and clear list.
+                        long[] episodeIds = podkisDao.insertEpisodes(episodeList);
+                        Log.d(TAG, String.format("syncPodkis - Number of Episodes inserted %d", episodeIds.length));
+                        Log.d(TAG, String.format("syncPodkis - List of Episodes inserted with IDs %s", Arrays.toString(episodeIds)));
+                        PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
+                        episodeList.clear();
 
-                // Transform to and Insert Podcast first.
-                Podcast podcast = new Podcast();
-                podcast.title = podcastWrapper.title;
-                podcast.description = podcastWrapper.description;
-                podcast.author = podcastWrapper.author;
-                for (ImageWrapper imageWrapper : podcastWrapper.image) {
-                    String imageUrl;
-                    if (imageWrapper.imageUrl != null) {
-                        imageUrl = imageWrapper.imageUrl;
-                    } else {
-                        imageUrl = imageWrapper.url;
-                    }
-                    if (imageUrl != null) {
-                        podcast.imageUrl = imageUrl;
-                        break;
-                    }
+                    case MAX_EPISODES:
+                        break forEpisodeWrapperList;
                 }
+            }
 
-                long podcastId = podkisDao.insertPodcast(podcast);
-                Log.d(TAG, String.format("syncPodkis - Podcast inserted with ID %d", podcastId));
-
-                // Generate List of Episodes, set parent ID, and insert.
-                List<Episode> episodeList = new ArrayList<>();
-                for (EpisodeWrapper episodeWrapper : podcastWrapper.episodeWrapperList) {
-                    Episode episode = new Episode();
-                    episode.podcastId = podcastId;
-                    episode.title = episodeWrapper.title.get(0);
-                    episode.description = episodeWrapper.description;
-                    episode.seasonNumber = episodeWrapper.seasonNumber;
-                    episode.episodeNumber = episodeWrapper.episodeNumber;
-                    episode.publishedDate = sDateFormat.parse(episodeWrapper.publishedDate);
-                    episode.duration = episodeWrapper.duration;
-                    episode.url = episodeWrapper.enclosure.url;
-                    String episodeImageUrl;
-                    if ((episodeImageUrl = episodeWrapper.image.url) == null) {
-                        episodeImageUrl = episodeWrapper.image.imageUrl;
-                    }
-                    episode.imageUrl = episodeImageUrl;
-
-                    episodeList.add(episode);
-                    if (episodeList.size() == 30) {
-                        break;
-                    }
-                }
-
+            if (!episodeList.isEmpty()) {
                 long[] episodeIds = podkisDao.insertEpisodes(episodeList);
                 Log.d(TAG, String.format("syncPodkis - Number of Episodes inserted %d", episodeIds.length));
                 Log.d(TAG, String.format("syncPodkis - List of Episodes inserted with IDs %s", Arrays.toString(episodeIds)));
-
             }
 
         } catch (Exception e) {
@@ -140,6 +148,10 @@ public class PodkisSyncTask {
         }
 
         PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
+        final long END_MS = System.currentTimeMillis();
+        Log.d(TAG, String.format("syncPodkis - START_MS:%d", START_MS));
+        Log.d(TAG, String.format("syncPodkis - END_MS:%d", END_MS));
+        Log.d(TAG, String.format("syncPodkis - took %d ms", END_MS - START_MS));
     }
 
     private static String calculateChecksum(Object object) {

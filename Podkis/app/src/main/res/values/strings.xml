@@ -2,13 +2,26 @@
     <string name="app_name">Podkis</string>
     <string name="podcast_thumbnail_content_description">Podcast thumbnail</string>
     <string name="podcast_detail_image_content_description">Podcast image</string>
-    <string name="podcast_podcast_description_label">Description</string>
+    <string name="podcast_description_content_description">Podcast description</string>
+    <string name="episode_description_content_description">Episode description</string>
+    <string name="podcast_episode_player_content_description">Podcast audio player</string>
+    <string name="season_number_content_description">Season number</string>
+    <string name="episode_number_content_description">Episode number</string>
+    <string name="episode_published_date_content_description">Date episode published</string>
+    <string name="episode_title_content_description">Episode title</string>
+    <string name="podcast_description_label">Description</string>
     <string name="podcast_episode_label">Episodes</string>
     <string name="action_refreshing">Refreshing podcasts…</string>
     <string name="podcast_checksum_prefs">podcast_checksum_prefs</string>
     <string name="pause">Pause</string>
     <string name="play">Play</string>
     <string name="restart">Restart</string>
+
+    <string-array name="podcast_list">
+        <item>startalk-radio</item>
+        <item>conan-obrien</item>
+        <item>the-daily</item>
+    </string-array>
 
     <!-- Test Strings for UI Design -->
     <string name="test_podcast_title">StarTalk Radio</string>

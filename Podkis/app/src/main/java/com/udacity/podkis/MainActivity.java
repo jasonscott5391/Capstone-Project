@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         mRecyclerView.setAdapter(mPodcastAdapter);
 
         mSwipeRefreshLayout = findViewById(R.id.swipe_refresh);
-        updateRefreshingUi();
+        updateRefreshingUi(true);
 
         mPodcastListViewModel = ViewModelProviders.of(this).get(PodcastListViewModel.class);
         mPodcastListViewModel.getPodcastList().observe(MainActivity.this, podcastList -> {
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
             sCurrentPosition = 0;
             sNumPodcasts = podcastList != null ? podcastList.size() : 0;
             mPodcastAdapter.swapPodcasts(podcastList);
-            updateRefreshingUi();
+            updateRefreshingUi(false);
         });
 
         mSwipeRefreshLayout.setOnRefreshListener(() -> {
@@ -139,18 +139,17 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
         return (int) (percent * availableMemory / 100);
     }
 
-    private void updateRefreshingUi() {
-        String message;
-        int length;
-        if (mSwipeRefreshLayout.isRefreshing()) {
-            mSwipeRefreshLayout.setRefreshing(false);
-            message = String.format(Locale.getDefault(), "%d podcast(s) refreshed!", sNumPodcasts);
-            length = Snackbar.LENGTH_SHORT;
+    private void updateRefreshingUi(boolean setRefreshing) {
+        if (setRefreshing) {
+            if (!mSwipeRefreshLayout.isRefreshing()) {
+                mSwipeRefreshLayout.setRefreshing(true);
+                Snackbar.make(mSwipeRefreshLayout, getString(R.string.action_refreshing), Snackbar.LENGTH_INDEFINITE).show();
+            }
         } else {
-            mSwipeRefreshLayout.setRefreshing(true);
-            message = getString(R.string.action_refreshing);
-            length = Snackbar.LENGTH_INDEFINITE;
+            if (mSwipeRefreshLayout.isRefreshing()) {
+                mSwipeRefreshLayout.setRefreshing(false);
+                Snackbar.make(mSwipeRefreshLayout, String.format(Locale.getDefault(), "%d podcast(s) available!", sNumPodcasts), Snackbar.LENGTH_SHORT).show();
+            }
         }
-        Snackbar.make(mSwipeRefreshLayout, message, length).show();
     }
 }
