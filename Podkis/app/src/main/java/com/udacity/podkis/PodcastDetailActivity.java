@@ -21,12 +21,15 @@ import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_IMAGE_URL;
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_TITLE;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_EPISODE_ID;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_IS_DUAL_PANE;
+import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_PREVIOUS_EPISODE_ID;
 
 public class PodcastDetailActivity extends AppCompatActivity implements PodcastDetailFragment.OnEpisodeSelectedListener, EpisodeDetailFragment.OnPodcastEpisodeBackSelectedListener {
 
     private static final String TAG = PodcastDetailActivity.class.getSimpleName();
 
     private static boolean sIsDualPane;
+    private static Long sEpisodeId;
+    private static Long sPreviousEpisodeId;
 
     private String mPodcastTitle;
     private CollapsingToolbarLayout mCollapsingToolbarLayout;
@@ -138,14 +141,19 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
     @Override
     public void onEpisodeSelected(Long id) {
         Log.d(TAG, String.format("onEpisodeSelected - id:%d", id));
-        commitEpisodeDetailFragment(id);
+        if (sEpisodeId != null) {
+            sPreviousEpisodeId = sEpisodeId;
+        }
+        sEpisodeId = id;
+        commitEpisodeDetailFragment();
     }
 
-    private void commitEpisodeDetailFragment(Long recipeId) {
+    private void commitEpisodeDetailFragment() {
         EpisodeDetailFragment episodeDetailFragment = new EpisodeDetailFragment();
         episodeDetailFragment.setOnPodcastEpisodeBackSelectedListener(this);
         Intent intent = new Intent();
-        intent.putExtra(INTENT_KEY_EPISODE_ID, recipeId);
+        intent.putExtra(INTENT_KEY_EPISODE_ID, sEpisodeId);
+        intent.putExtra(INTENT_KEY_PREVIOUS_EPISODE_ID, sPreviousEpisodeId);
         intent.putExtra(INTENT_KEY_IS_DUAL_PANE, sIsDualPane);
         episodeDetailFragment.setArguments(intent.getExtras());
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();

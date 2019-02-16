@@ -35,7 +35,8 @@ import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_TITLE;
 public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.EpisodeClickHandler {
 
     protected static final String TAG = PodcastDetailFragment.class.getSimpleName();
-    protected static final String INTENT_KEY_EPISODE_ID = "episode_id";
+    public static final String INTENT_KEY_EPISODE_ID = "episode_id";
+    protected static final String INTENT_KEY_PREVIOUS_EPISODE_ID = "previous_episode_id";
     protected static final String INTENT_KEY_IS_DUAL_PANE = "is_dual_pane";
 
     private static boolean sIsDualPane;

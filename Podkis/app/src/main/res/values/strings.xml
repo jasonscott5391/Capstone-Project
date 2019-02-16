@@ -16,6 +16,7 @@
     <string name="pause">Pause</string>
     <string name="play">Play</string>
     <string name="restart">Restart</string>
+    <string name="playback_channel_name">Playback</string>
 
     <string-array name="podcast_list">
         <item>startalk-radio</item>
