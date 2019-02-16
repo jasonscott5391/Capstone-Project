@@ -34,7 +34,7 @@ public class PodkisSyncTask {
     private static final String TAG = PodkisSyncTask.class.getSimpleName();
     private static final String BASE_RSS_URL = "https://rss.art19.com";
     private static final DateFormat sDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault());
-    private static final int MAX_EPISODES = 30;
+    private static final int MAX_EPISODES = 50;
     private static final int EPISODE_BATCH_SIZE = 10;
 
     private static PodkisService sPodkisService = new Retrofit.Builder()
@@ -47,7 +47,6 @@ public class PodkisSyncTask {
         final long START_MS = System.currentTimeMillis();
 
         Log.d(TAG, String.format("syncPodkis - Preparing request podcastString: %s", podcastString));
-//        PodkisRepository.getPodcastList().postValue(podkisDao.getPodcasts());
 
         try {
 
