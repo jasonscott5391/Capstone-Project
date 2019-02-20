@@ -18,6 +18,8 @@
     <string name="restart">Restart</string>
     <string name="playback_channel_name">Playback</string>
     <string name="widget_default_title">Start listening…</string>
+    <string name="ad_mob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="ad_mob_unit_id">ca-app-pub-3940256099942544/6300978111</string>
 
     <string-array name="podcast_list">
         <item>startalk-radio</item>
