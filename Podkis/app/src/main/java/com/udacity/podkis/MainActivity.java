@@ -15,6 +15,10 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.ImageView;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 import com.squareup.picasso.LruCache;
 import com.squareup.picasso.Picasso;
 import com.udacity.podkis.repository.PodkisRepository;
@@ -43,11 +47,20 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private PodcastAdapter mPodcastAdapter;
     private PodcastListViewModel mPodcastListViewModel;
+    private AdView mAdView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        MobileAds.initialize(this, getString(R.string.ad_mob_app_id));
+
+        mAdView = findViewById(R.id.podkis_ad_view);
+        AdRequest adRequest = new AdRequest.Builder()
+                .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
+                .build();
+        mAdView.loadAd(adRequest);
 
         initCustomPicasso();
 
