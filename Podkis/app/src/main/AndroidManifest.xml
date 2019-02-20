@@ -13,6 +13,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/MyTheme">
+
+        <receiver android:name=".provider.PodcastPlayerWidgetProvider">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/podcast_player_widget_info" />
+        </receiver>
+
         <service
             android:name=".sync.PodkisSyncService"
             android:exported="false" />
@@ -20,6 +31,10 @@
             android:name=".service.PodcastPlayerService"
             android:exported="false"
             android:stopWithTask="true" />
+
+        <service
+            android:name=".service.PodcastPlayerWidgetService"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"

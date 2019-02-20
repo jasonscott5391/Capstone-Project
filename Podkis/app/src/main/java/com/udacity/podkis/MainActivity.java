@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity implements PodcastAdapter.Po
     private static final String TAG = MainActivity.class.getSimpleName();
 
     protected static final String INTENT_KEY_PODCAST_ID = "podcast_id";
-    protected static final String INTENT_KEY_PODCAST_TITLE = "podcast_title";
+    public static final String INTENT_KEY_PODCAST_TITLE = "podcast_title";
     protected static final String INTENT_KEY_PODCAST_DESCRIPTION = "podcast_description";
     protected static final String INTENT_KEY_PODCAST_IMAGE_URL = "podcast_image_url";
     protected static final String INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME = "podcast_image_transition_name";

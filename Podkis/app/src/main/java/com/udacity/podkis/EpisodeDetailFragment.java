@@ -28,6 +28,7 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 import com.udacity.podkis.entity.Episode;
 import com.udacity.podkis.service.PodcastPlayerService;
+import com.udacity.podkis.service.PodcastPlayerWidgetService;
 import com.udacity.podkis.viewmodel.EpisodeViewModel;
 import com.udacity.podkis.viewmodel.EpisodeViewModelFactory;
 
@@ -36,6 +37,7 @@ import java.util.Locale;
 
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_IMAGE_URL;
+import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_TITLE;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_EPISODE_ID;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_IS_DUAL_PANE;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_PREVIOUS_EPISODE_ID;
@@ -43,7 +45,7 @@ import static com.udacity.podkis.service.PodcastPlayerService.INTENT_KEY_EPISODE
 import static com.udacity.podkis.service.PodcastPlayerService.INTENT_KEY_EPISODE_IMAGE_URL;
 import static com.udacity.podkis.service.PodcastPlayerService.INTENT_KEY_EPISODE_TITLE;
 import static com.udacity.podkis.service.PodcastPlayerService.INTENT_KEY_EPISODE_URL;
-
+import static com.udacity.podkis.service.PodcastPlayerWidgetService.ACTION_PODCAST_PLAYER_WIDGET;
 
 public class EpisodeDetailFragment extends Fragment {
 
@@ -58,6 +60,7 @@ public class EpisodeDetailFragment extends Fragment {
     private OnPodcastEpisodeBackSelectedListener mOnPodcastEpisodeBackSelectedListener;
     private Long mEpisodeId;
     private Long mPreviousEpisodeId;
+    private String mPodcastTitle;
     private String mEpisodeTitle;
     private String mEpisodeDescription;
     private String mPodcastImageUrl;
@@ -68,8 +71,8 @@ public class EpisodeDetailFragment extends Fragment {
     private TextView mEpisodePublishedDateTextView;
     private TextView mEpisodeDescriptionTextView;
     private EpisodeViewModel mEpisodeViewModel;
-    private AudioPlayerServiceConnection mAudioPlayerServiceConnection;
-    private PlayerView playerView;
+    private PodcastPlayerServiceConnection mPodcastPlayerServiceConnection;
+    private PlayerView mPlayerView;
 
     public EpisodeDetailFragment() {
     }
@@ -91,6 +94,7 @@ public class EpisodeDetailFragment extends Fragment {
         }
 
         sIsDualPane = mBundle.getBoolean(INTENT_KEY_IS_DUAL_PANE, false);
+        mPodcastTitle = mBundle.getString(INTENT_KEY_PODCAST_TITLE, null);
         mEpisodeId = mBundle.getLong(INTENT_KEY_EPISODE_ID, -1L);
         mPreviousEpisodeId = mBundle.getLong(INTENT_KEY_PREVIOUS_EPISODE_ID, -1L);
         mPodcastImageUrl = mBundle.getString(INTENT_KEY_PODCAST_IMAGE_URL);
@@ -113,10 +117,10 @@ public class EpisodeDetailFragment extends Fragment {
             mEpisodeDescriptionTextView = view.findViewById(R.id.episode_detail_description);
         }
 
-        playerView = view.findViewById(R.id.podcast_episode_player);
-        playerView.setPlayer(null);
+        mPlayerView = view.findViewById(R.id.podcast_episode_player);
+        mPlayerView.setPlayer(null);
         if (mEpisodeId == -1L) {
-            playerView.setVisibility(View.GONE);
+            mPlayerView.setVisibility(View.GONE);
         }
 
         mContext = getContext();
@@ -124,7 +128,7 @@ public class EpisodeDetailFragment extends Fragment {
         mEpisodeViewModel = ViewModelProviders.of(this, new EpisodeViewModelFactory(mContext, mEpisodeId)).get(EpisodeViewModel.class);
         mEpisodeViewModel.getEpisode().observe(this, this::bindEpisode);
 
-        mAudioPlayerServiceConnection = new AudioPlayerServiceConnection();
+        mPodcastPlayerServiceConnection = new PodcastPlayerServiceConnection();
 
         return view;
     }
@@ -157,7 +161,7 @@ public class EpisodeDetailFragment extends Fragment {
     @Override
     public void onStop() {
         if (mIsBound) {
-            mContext.unbindService(mAudioPlayerServiceConnection);
+            mContext.unbindService(mPodcastPlayerServiceConnection);
             mIsBound = false;
         }
         super.onStop();
@@ -181,8 +185,8 @@ public class EpisodeDetailFragment extends Fragment {
         if (!sIsDualPane) {
             mToolbar.setTitle(mEpisodeTitle);
         } else {
-            if (playerView.getVisibility() == View.GONE) {
-                playerView.setVisibility(View.VISIBLE);
+            if (mPlayerView.getVisibility() == View.GONE) {
+                mPlayerView.setVisibility(View.VISIBLE);
             }
         }
 
@@ -215,7 +219,7 @@ public class EpisodeDetailFragment extends Fragment {
                 .into(new Target() {
                     @Override
                     public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-                        playerView.setDefaultArtwork(bitmap);
+                        mPlayerView.setDefaultArtwork(bitmap);
                     }
 
                     @Override
@@ -242,9 +246,17 @@ public class EpisodeDetailFragment extends Fragment {
             if (!mPreviousEpisodeId.equals(mEpisodeId)) {
                 mContext.stopService(audioPlayerServiceIntent);
                 Util.startForegroundService(mContext, audioPlayerServiceIntent);
+
+                // Create intent to update widget.
+                Intent widgetIntent = new Intent(mContext, PodcastPlayerWidgetService.class);
+                widgetIntent.setAction(ACTION_PODCAST_PLAYER_WIDGET);
+                widgetIntent.putExtra(INTENT_KEY_PODCAST_TITLE, mPodcastTitle);
+                widgetIntent.putExtra(INTENT_KEY_EPISODE_TITLE, mEpisodeTitle);
+                widgetIntent.putExtra(INTENT_KEY_EPISODE_IMAGE_URL, episodeImageUrl);
+                mContext.startService(widgetIntent);
             }
 
-            mContext.bindService(audioPlayerServiceIntent, mAudioPlayerServiceConnection, Context.BIND_AUTO_CREATE);
+            mContext.bindService(audioPlayerServiceIntent, mPodcastPlayerServiceConnection, Context.BIND_AUTO_CREATE);
             mIsBound = true;
         }
     }
@@ -257,14 +269,14 @@ public class EpisodeDetailFragment extends Fragment {
         this.mOnPodcastEpisodeBackSelectedListener = onPodcastEpisodeBackSelectedListener;
     }
 
-    class AudioPlayerServiceConnection implements ServiceConnection {
+    class PodcastPlayerServiceConnection implements ServiceConnection {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.d(TAG, String.format("onServiceConnected - name:%s, service:%s", name, service));
             if (service instanceof PodcastPlayerService.AudioPlayerServiceBinder) {
                 PodcastPlayerService.AudioPlayerServiceBinder audioPlayerServiceBinder = (PodcastPlayerService.AudioPlayerServiceBinder) service;
-                playerView.setPlayer(audioPlayerServiceBinder.getSimpleExoPlayer());
+                mPlayerView.setPlayer(audioPlayerServiceBinder.getSimpleExoPlayer());
             }
         }
 

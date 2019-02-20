@@ -152,6 +152,7 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
         EpisodeDetailFragment episodeDetailFragment = new EpisodeDetailFragment();
         episodeDetailFragment.setOnPodcastEpisodeBackSelectedListener(this);
         Intent intent = new Intent();
+        intent.putExtra(INTENT_KEY_PODCAST_TITLE, mPodcastTitle);
         intent.putExtra(INTENT_KEY_EPISODE_ID, sEpisodeId);
         intent.putExtra(INTENT_KEY_PREVIOUS_EPISODE_ID, sPreviousEpisodeId);
         intent.putExtra(INTENT_KEY_IS_DUAL_PANE, sIsDualPane);
