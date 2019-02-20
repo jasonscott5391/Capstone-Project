@@ -41,6 +41,7 @@ import com.udacity.podkis.PodcastDetailActivity;
 import com.udacity.podkis.R;
 
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_EPISODE_ID;
+import static com.udacity.podkis.service.PodcastPlayerWidgetService.ACTION_PODCAST_PLAYER_WIDGET;
 
 public class PodcastPlayerService extends Service {
 
@@ -110,6 +111,10 @@ public class PodcastPlayerService extends Service {
         mSimpleExoPlayer.release();
         mSimpleExoPlayer = null;
 
+        // Create intent to clear widget.
+        Intent widgetIntent = new Intent(mContext, PodcastPlayerWidgetService.class);
+        widgetIntent.setAction(ACTION_PODCAST_PLAYER_WIDGET);
+        mContext.startService(widgetIntent);
     }
 
     @Nullable
