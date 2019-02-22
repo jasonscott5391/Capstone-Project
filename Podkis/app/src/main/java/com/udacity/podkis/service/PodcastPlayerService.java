@@ -41,7 +41,6 @@ import com.udacity.podkis.PodcastDetailActivity;
 import com.udacity.podkis.R;
 
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_EPISODE_ID;
-import static com.udacity.podkis.service.PodcastPlayerWidgetService.ACTION_PODCAST_PLAYER_WIDGET;
 
 public class PodcastPlayerService extends Service {
 
@@ -61,7 +60,6 @@ public class PodcastPlayerService extends Service {
     private static int sStartId;
 
     private Context mContext;
-    private Bundle mBundle;
     private SimpleExoPlayer mSimpleExoPlayer;
     private PlayerNotificationManager mPlayerNotificationManager;
     private MediaSessionCompat mMediaSession;
@@ -71,6 +69,7 @@ public class PodcastPlayerService extends Service {
     private Long mEpisodeId;
     private String mEpisodeTitle;
     private String mEpisodeDescription;
+    private String mEpisodeUrl;
     private String mEpisodeImageUrl;
     private long mCurrentPosition = -1L;
 
@@ -95,7 +94,7 @@ public class PodcastPlayerService extends Service {
         }
 
         // Commit current position for current episode to shared preferences.
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences(getString(R.string.podcast_checksum_prefs), Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(getString(R.string.podkis_shared_prefs), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putLong(String.format("%s-%s", mEpisodeId, PREFS_KEY_CURRENT_POSITION), positionToCommit);
         editor.apply();
@@ -110,11 +109,6 @@ public class PodcastPlayerService extends Service {
         mPlayerNotificationManager.setPlayer(null);
         mSimpleExoPlayer.release();
         mSimpleExoPlayer = null;
-
-        // Create intent to clear widget.
-        Intent widgetIntent = new Intent(mContext, PodcastPlayerWidgetService.class);
-        widgetIntent.setAction(ACTION_PODCAST_PLAYER_WIDGET);
-        mContext.startService(widgetIntent);
     }
 
     @Nullable
@@ -145,16 +139,15 @@ public class PodcastPlayerService extends Service {
         }
 
         mContext = this;
-        mBundle = intent.getExtras();
         mEpisodeBitmap = ((BitmapDrawable) mContext.getResources().getDrawable(R.drawable.web_hi_res_512)).getBitmap();
 
-        mEpisodeId = mBundle.getLong(INTENT_KEY_EPISODE_ID);
-        mEpisodeTitle = mBundle.getString(INTENT_KEY_EPISODE_TITLE);
-        mEpisodeDescription = mBundle.getString(INTENT_KEY_EPISODE_DESCRIPTION);
-        String episodeUrl = mBundle.getString(INTENT_KEY_EPISODE_URL);
-        mEpisodeImageUrl = mBundle.getString(INTENT_KEY_EPISODE_IMAGE_URL);
+        mEpisodeId = intent.getLongExtra(INTENT_KEY_EPISODE_ID, -1L);
+        mEpisodeTitle = intent.getStringExtra(INTENT_KEY_EPISODE_TITLE);
+        mEpisodeDescription = intent.getStringExtra(INTENT_KEY_EPISODE_DESCRIPTION);
+        mEpisodeUrl = intent.getStringExtra(INTENT_KEY_EPISODE_URL);
+        mEpisodeImageUrl = intent.getStringExtra(INTENT_KEY_EPISODE_IMAGE_URL);
 
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences(getString(R.string.podcast_checksum_prefs), Context.MODE_PRIVATE);
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(getString(R.string.podkis_shared_prefs), Context.MODE_PRIVATE);
         mCurrentPosition = sharedPreferences.getLong(String.format("%s-%s", mEpisodeId, PREFS_KEY_CURRENT_POSITION), -1L);
 
         mSimpleExoPlayer = ExoPlayerFactory.newSimpleInstance(mContext, new DefaultTrackSelector());
@@ -171,7 +164,7 @@ public class PodcastPlayerService extends Service {
             }
         });
 
-        MediaSource mediaSource = new ExtractorMediaSource(Uri.parse(episodeUrl), new DefaultDataSourceFactory(
+        MediaSource mediaSource = new ExtractorMediaSource(Uri.parse(mEpisodeUrl), new DefaultDataSourceFactory(
                 mContext, Util.getUserAgent(mContext, getString(R.string.app_name))), new DefaultExtractorsFactory(), null, null);
 
         mSimpleExoPlayer.prepare(mediaSource);
@@ -193,8 +186,13 @@ public class PodcastPlayerService extends Service {
                     @Override
                     public PendingIntent createCurrentContentIntent(Player player) {
                         Intent intent = new Intent(mContext, PodcastDetailActivity.class);
-                        intent.putExtras(mBundle);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        intent.putExtra(INTENT_KEY_EPISODE_ID, mEpisodeId);
+                        intent.putExtra(INTENT_KEY_EPISODE_TITLE, mEpisodeTitle);
+                        intent.putExtra(INTENT_KEY_EPISODE_DESCRIPTION, mEpisodeDescription);
+                        intent.putExtra(INTENT_KEY_EPISODE_URL, mEpisodeUrl);
+                        intent.putExtra(INTENT_KEY_EPISODE_IMAGE_URL, mEpisodeImageUrl);
+
+                        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                         intent.setAction(mEpisodeTitle);
                         return PendingIntent.getActivity(mContext, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
                     }

@@ -15,6 +15,10 @@ import com.udacity.podkis.R;
 
 import java.io.IOException;
 
+import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_TITLE;
+import static com.udacity.podkis.service.PodcastPlayerService.INTENT_KEY_EPISODE_IMAGE_URL;
+import static com.udacity.podkis.service.PodcastPlayerService.INTENT_KEY_EPISODE_TITLE;
+
 public class PodcastPlayerWidgetProvider extends AppWidgetProvider {
 
     private static final String TAG = PodcastPlayerWidgetProvider.class.getSimpleName();
@@ -40,6 +44,9 @@ public class PodcastPlayerWidgetProvider extends AppWidgetProvider {
             sInitialized = false;
         } else {
             intent = new Intent(context, PodcastDetailActivity.class);
+            intent.putExtra(INTENT_KEY_PODCAST_TITLE, podcastTitle);
+            intent.putExtra(INTENT_KEY_EPISODE_TITLE, episodeTitle);
+            intent.putExtra(INTENT_KEY_EPISODE_IMAGE_URL, episodeImageUrl);
         }
 
         views.setTextViewText(R.id.widget_podcast_title, podcastTitle);
@@ -58,12 +65,9 @@ public class PodcastPlayerWidgetProvider extends AppWidgetProvider {
         }
 
         // Set PendingIntent for when clicked.
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.setAction(episodeTitle);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        views.setOnClickPendingIntent(R.id.widget_podcast_episode_thumbnail, pendingIntent);
-        views.setOnClickPendingIntent(R.id.widget_podcast_title, pendingIntent);
-        views.setOnClickPendingIntent(R.id.widget_podcast_episode_title, pendingIntent);
+        setPendingIntent(context, intent, views);
 
         // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetIds, views);
@@ -83,10 +87,7 @@ public class PodcastPlayerWidgetProvider extends AppWidgetProvider {
             // Construct RemoveViewsObject.
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.podcast_player_widget);
             Intent intent = new Intent(context, MainActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-            views.setOnClickPendingIntent(R.id.widget_podcast_episode_thumbnail, pendingIntent);
-            views.setOnClickPendingIntent(R.id.widget_podcast_title, pendingIntent);
-            views.setOnClickPendingIntent(R.id.widget_podcast_episode_title, pendingIntent);
+            setPendingIntent(context, intent, views);
             // Instruct the widget manager to update the widget
             appWidgetManager.updateAppWidget(appWidgetIds, views);
             sInitialized = true;
@@ -106,5 +107,12 @@ public class PodcastPlayerWidgetProvider extends AppWidgetProvider {
     @Override
     public void onDeleted(Context context, int[] appWidgetIds) {
         Log.d(TAG, "onDeleted");
+    }
+
+    private static void setPendingIntent(Context context, Intent intent, RemoteViews views) {
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        views.setOnClickPendingIntent(R.id.widget_podcast_episode_thumbnail, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_podcast_title, pendingIntent);
+        views.setOnClickPendingIntent(R.id.widget_podcast_episode_title, pendingIntent);
     }
 }
