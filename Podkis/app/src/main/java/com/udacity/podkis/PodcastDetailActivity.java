@@ -1,6 +1,8 @@
 package com.udacity.podkis;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
@@ -17,6 +19,9 @@ import android.widget.ImageView;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
+import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_DESCRIPTION;
+import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_ID;
+import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME;
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_IMAGE_URL;
 import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_TITLE;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_EPISODE_ID;
@@ -27,11 +32,16 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
 
     private static final String TAG = PodcastDetailActivity.class.getSimpleName();
 
+    private static boolean sReturning = false;
     private static boolean sIsDualPane;
     private static Long sEpisodeId;
     private static Long sPreviousEpisodeId;
 
+    private Long mPodcastId;
     private String mPodcastTitle;
+    private String mPodcastDescription;
+    private String mImageTransitionName;
+    private String mPodcastImageUrl;
     private CollapsingToolbarLayout mCollapsingToolbarLayout;
     private Toolbar mToolbar;
     private ImageView mPodcastDetailImageView;
@@ -53,9 +63,35 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
 
         sIsDualPane = findViewById(R.id.episode_detail_fragment_container) != null;
 
-        Bundle bundle = getIntent().getExtras();
-        mPodcastTitle = bundle.getString(INTENT_KEY_PODCAST_TITLE, getString(R.string.app_name));
-        String imageUrl = bundle.getString(INTENT_KEY_PODCAST_IMAGE_URL);
+        Intent callingIntent = getIntent();
+        mPodcastId = callingIntent.getLongExtra(INTENT_KEY_PODCAST_ID, -1L);
+        mPodcastTitle = callingIntent.getStringExtra(INTENT_KEY_PODCAST_TITLE);
+        mPodcastDescription = callingIntent.getStringExtra(INTENT_KEY_PODCAST_DESCRIPTION);
+        mImageTransitionName = callingIntent.getStringExtra(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME);
+        mPodcastImageUrl = callingIntent.getStringExtra(INTENT_KEY_PODCAST_IMAGE_URL);
+
+        SharedPreferences sharedPreferences = getSharedPreferences(getString(R.string.podkis_shared_prefs), Context.MODE_PRIVATE);
+
+        if (mPodcastId == null
+                || mPodcastId == -1L) {
+            mPodcastId = sharedPreferences.getLong(INTENT_KEY_PODCAST_ID, -1L);
+            mPodcastTitle = sharedPreferences.getString(INTENT_KEY_PODCAST_TITLE, null);
+            mPodcastDescription = sharedPreferences.getString(INTENT_KEY_PODCAST_DESCRIPTION, null);
+            mImageTransitionName = sharedPreferences.getString(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME, null);
+            mPodcastImageUrl = sharedPreferences.getString(INTENT_KEY_PODCAST_IMAGE_URL, null);
+            sEpisodeId = sharedPreferences.getLong(INTENT_KEY_EPISODE_ID, -1L);
+            sPreviousEpisodeId = sharedPreferences.getLong(INTENT_KEY_PREVIOUS_EPISODE_ID, -1L);
+            sReturning = true;
+        } else {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putLong(INTENT_KEY_PODCAST_ID, mPodcastId);
+            editor.putString(INTENT_KEY_PODCAST_TITLE, mPodcastTitle);
+            editor.putString(INTENT_KEY_PODCAST_DESCRIPTION, mPodcastDescription);
+            editor.putString(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME, mImageTransitionName);
+            editor.putString(INTENT_KEY_PODCAST_IMAGE_URL, mPodcastImageUrl);
+            editor.apply();
+        }
+
 
         if (sIsDualPane) {
             mCollapsingToolbarLayout = findViewById(R.id.detail_collapsing_toolbar_layout);
@@ -64,10 +100,10 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
             mToolbar.setNavigationOnClickListener(v -> onBackPressed());
             mPodcastDetailImageView = findViewById(R.id.podcast_detail_image);
 
-            if (imageUrl != null
-                    && !imageUrl.isEmpty()) {
+            if (mPodcastImageUrl != null
+                    && !mPodcastImageUrl.isEmpty()) {
                 Picasso.get()
-                        .load(imageUrl)
+                        .load(mPodcastImageUrl)
                         .noFade()
                         .placeholder(ContextCompat.getDrawable(this, R.drawable.web_hi_res_512_square))
                         .into(mPodcastDetailImageView, new Callback() {
@@ -88,9 +124,7 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
             if (savedInstanceState == null) {
                 PodcastDetailFragment podcastDetailFragment = new PodcastDetailFragment();
                 podcastDetailFragment.setOnEpisodeSelectedListener(this);
-                Intent intent = new Intent();
-                intent.putExtras(getIntent().getExtras());
-                intent.putExtra(INTENT_KEY_IS_DUAL_PANE, sIsDualPane);
+                Intent intent = createIntent();
                 podcastDetailFragment.setArguments(intent.getExtras());
                 FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
                 fragmentTransaction.add(R.id.podcast_detail_fragment_container, podcastDetailFragment);
@@ -113,7 +147,8 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
             if (savedInstanceState == null) {
                 PodcastDetailFragment podcastDetailFragment = new PodcastDetailFragment();
                 podcastDetailFragment.setOnEpisodeSelectedListener(this);
-                podcastDetailFragment.setArguments(getIntent().getExtras());
+                Intent intent = createIntent();
+                podcastDetailFragment.setArguments(intent.getExtras());
                 FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
                 fragmentTransaction.add(R.id.podcast_detail_fragment_container, podcastDetailFragment);
                 fragmentTransaction.commit();
@@ -124,6 +159,16 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (sReturning) {
+            commitEpisodeDetailFragment();
+            sReturning = false;
         }
     }
 
@@ -151,11 +196,7 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
     private void commitEpisodeDetailFragment() {
         EpisodeDetailFragment episodeDetailFragment = new EpisodeDetailFragment();
         episodeDetailFragment.setOnPodcastEpisodeBackSelectedListener(this);
-        Intent intent = new Intent();
-        intent.putExtra(INTENT_KEY_PODCAST_TITLE, mPodcastTitle);
-        intent.putExtra(INTENT_KEY_EPISODE_ID, sEpisodeId);
-        intent.putExtra(INTENT_KEY_PREVIOUS_EPISODE_ID, sPreviousEpisodeId);
-        intent.putExtra(INTENT_KEY_IS_DUAL_PANE, sIsDualPane);
+        Intent intent = createIntent();
         episodeDetailFragment.setArguments(intent.getExtras());
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
         fragmentTransaction.addToBackStack(null);
@@ -176,5 +217,29 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
         while (mFragmentManager.getBackStackEntryCount() > 1) {
             mFragmentManager.popBackStackImmediate();
         }
+    }
+
+    private Intent createIntent() {
+        Intent intent = new Intent();
+        intent.putExtra(INTENT_KEY_PODCAST_ID, mPodcastId);
+        intent.putExtra(INTENT_KEY_PODCAST_TITLE, mPodcastTitle);
+        intent.putExtra(INTENT_KEY_PODCAST_DESCRIPTION, mPodcastDescription);
+        intent.putExtra(INTENT_KEY_EPISODE_ID, sEpisodeId);
+        intent.putExtra(INTENT_KEY_PREVIOUS_EPISODE_ID, sPreviousEpisodeId);
+        intent.putExtra(INTENT_KEY_IS_DUAL_PANE, sIsDualPane);
+        intent.putExtra(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME, mImageTransitionName);
+        intent.putExtra(INTENT_KEY_PODCAST_IMAGE_URL, mPodcastImageUrl);
+
+        SharedPreferences.Editor editor = getSharedPreferences(getString(R.string.podkis_shared_prefs), Context.MODE_PRIVATE).edit();
+        if (sEpisodeId != null) {
+            editor.putLong(INTENT_KEY_EPISODE_ID, sEpisodeId);
+        }
+        if (sPreviousEpisodeId != null) {
+            editor.putLong(INTENT_KEY_PREVIOUS_EPISODE_ID, sPreviousEpisodeId);
+
+        }
+        editor.apply();
+
+        return intent;
     }
 }

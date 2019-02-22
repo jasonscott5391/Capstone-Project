@@ -91,7 +91,7 @@ public class PodkisSyncService extends Service {
                 return;
             }
 
-            SharedPreferences sharedPreferences = mContext.getSharedPreferences(getString(R.string.podcast_checksum_prefs), Context.MODE_PRIVATE);
+            SharedPreferences sharedPreferences = mContext.getSharedPreferences(getString(R.string.podkis_shared_prefs), Context.MODE_PRIVATE);
 
             PodkisSyncTask.syncPodkis(podkisDao, sharedPreferences, intent.getStringExtra(INTENT_KEY_PODCAST));
             // Stop service.
