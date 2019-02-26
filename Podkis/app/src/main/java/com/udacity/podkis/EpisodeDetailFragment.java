@@ -53,7 +53,7 @@ public class EpisodeDetailFragment extends Fragment {
 
     private static int sOrientation;
     private static boolean sIsDualPane;
-    private static boolean mIsBound = false;
+    private static boolean sIsBound = false;
 
     private Context mContext;
     private Bundle mBundle;
@@ -110,7 +110,8 @@ public class EpisodeDetailFragment extends Fragment {
 
         sOrientation = getResources().getConfiguration().orientation;
 
-        if (sOrientation != ORIENTATION_LANDSCAPE) {
+        if (sOrientation != ORIENTATION_LANDSCAPE
+                || sIsDualPane) {
             mEpisodeSeasonNumberTextView = view.findViewById(R.id.episode_detail_season_number);
             mEpisodeNumberTextView = view.findViewById(R.id.episode_detail_number);
             mEpisodePublishedDateTextView = view.findViewById(R.id.episode_detail_published_date);
@@ -160,10 +161,11 @@ public class EpisodeDetailFragment extends Fragment {
 
     @Override
     public void onStop() {
-        if (mIsBound) {
+        if (sIsBound) {
             mContext.unbindService(mPodcastPlayerServiceConnection);
-            mIsBound = false;
+            sIsBound = false;
         }
+
         super.onStop();
     }
 
@@ -190,7 +192,8 @@ public class EpisodeDetailFragment extends Fragment {
             }
         }
 
-        if (sOrientation != ORIENTATION_LANDSCAPE) {
+        if (sOrientation != ORIENTATION_LANDSCAPE
+                || sIsDualPane) {
             if (episode.seasonNumber != null) {
                 mEpisodeSeasonNumberTextView.setText(String.format(Locale.getDefault(), "Season %d", episode.seasonNumber));
             }
@@ -242,7 +245,7 @@ public class EpisodeDetailFragment extends Fragment {
         mBundle.putString(INTENT_KEY_EPISODE_IMAGE_URL, episodeImageUrl);
         audioPlayerServiceIntent.putExtras(mBundle);
 
-        if (!mIsBound) {
+        if (!sIsBound) {
             if (!mPreviousEpisodeId.equals(mEpisodeId)) {
                 mContext.stopService(audioPlayerServiceIntent);
                 Util.startForegroundService(mContext, audioPlayerServiceIntent);
@@ -257,7 +260,7 @@ public class EpisodeDetailFragment extends Fragment {
             }
 
             mContext.bindService(audioPlayerServiceIntent, mPodcastPlayerServiceConnection, Context.BIND_AUTO_CREATE);
-            mIsBound = true;
+            sIsBound = true;
         }
     }
 
