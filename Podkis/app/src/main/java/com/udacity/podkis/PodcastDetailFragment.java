@@ -170,15 +170,15 @@ public class PodcastDetailFragment extends Fragment implements EpisodeAdapter.Ep
     }
 
     @Override
-    public void onClickEpisode(Long id) {
-        Log.d(TAG, String.format("onClickEpisode - id:%d ,mOnEpisodeSelectedListener:%s", id, mOnEpisodeSelectedListener));
+    public void onClickEpisode(Long id, String title) {
+        Log.d(TAG, String.format("onClickEpisode - id:%d, title:%s, mOnEpisodeSelectedListener:%s", id, title, mOnEpisodeSelectedListener));
         if (mOnEpisodeSelectedListener != null) {
-            mOnEpisodeSelectedListener.onEpisodeSelected(id);
+            mOnEpisodeSelectedListener.onEpisodeSelected(id, title);
         }
     }
 
     public interface OnEpisodeSelectedListener {
-        void onEpisodeSelected(Long id);
+        void onEpisodeSelected(Long id, String title);
     }
 
     public void setOnEpisodeSelectedListener(OnEpisodeSelectedListener onEpisodeSelectedListener) {

@@ -127,7 +127,7 @@ public class EpisodeAdapter extends PagedListAdapter<Episode, EpisodeAdapter.Epi
     }
 
     public interface EpisodeClickHandler {
-        void onClickEpisode(Long id);
+        void onClickEpisode(Long id, String title);
     }
 
     public class EpisodeViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -152,7 +152,8 @@ public class EpisodeAdapter extends PagedListAdapter<Episode, EpisodeAdapter.Epi
 
         @Override
         public void onClick(View v) {
-            mEpisodeClickHandler.onClickEpisode(getItem(getAdapterPosition()).id);
+            Episode episode = getItem(getAdapterPosition());
+            mEpisodeClickHandler.onClickEpisode(episode.id, episode.title);
         }
     }
 }

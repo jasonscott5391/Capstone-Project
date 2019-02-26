@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
@@ -27,6 +28,7 @@ import static com.udacity.podkis.MainActivity.INTENT_KEY_PODCAST_TITLE;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_EPISODE_ID;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_IS_DUAL_PANE;
 import static com.udacity.podkis.PodcastDetailFragment.INTENT_KEY_PREVIOUS_EPISODE_ID;
+import static com.udacity.podkis.service.PodcastPlayerService.INTENT_KEY_EPISODE_TITLE;
 
 public class PodcastDetailActivity extends AppCompatActivity implements PodcastDetailFragment.OnEpisodeSelectedListener, EpisodeDetailFragment.OnPodcastEpisodeBackSelectedListener {
 
@@ -36,6 +38,7 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
     private static boolean sIsDualPane;
     private static Long sEpisodeId;
     private static Long sPreviousEpisodeId;
+    private static String sEpisodeTitle;
 
     private Long mPodcastId;
     private String mPodcastTitle;
@@ -46,6 +49,7 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
     private Toolbar mToolbar;
     private ImageView mPodcastDetailImageView;
     private FragmentManager mFragmentManager;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +62,8 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
         }
 
         setContentView(R.layout.activity_podcast_detail);
+
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         mFragmentManager = getSupportFragmentManager();
 
@@ -80,6 +86,7 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
             mImageTransitionName = sharedPreferences.getString(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME, null);
             mPodcastImageUrl = sharedPreferences.getString(INTENT_KEY_PODCAST_IMAGE_URL, null);
             sEpisodeId = sharedPreferences.getLong(INTENT_KEY_EPISODE_ID, -1L);
+            sEpisodeTitle = sharedPreferences.getString(INTENT_KEY_EPISODE_TITLE, null);
             sPreviousEpisodeId = sharedPreferences.getLong(INTENT_KEY_PREVIOUS_EPISODE_ID, -1L);
             sReturning = true;
         } else {
@@ -184,12 +191,13 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
     }
 
     @Override
-    public void onEpisodeSelected(Long id) {
-        Log.d(TAG, String.format("onEpisodeSelected - id:%d", id));
+    public void onEpisodeSelected(Long id, String title) {
+        Log.d(TAG, String.format("onEpisodeSelected - id:%d, title:%s", id, title));
         if (sEpisodeId != null) {
             sPreviousEpisodeId = sEpisodeId;
         }
         sEpisodeId = id;
+        sEpisodeTitle = title;
         commitEpisodeDetailFragment();
     }
 
@@ -229,6 +237,12 @@ public class PodcastDetailActivity extends AppCompatActivity implements PodcastD
         intent.putExtra(INTENT_KEY_IS_DUAL_PANE, sIsDualPane);
         intent.putExtra(INTENT_KEY_PODCAST_IMAGE_TRANSITION_NAME, mImageTransitionName);
         intent.putExtra(INTENT_KEY_PODCAST_IMAGE_URL, mPodcastImageUrl);
+
+        if (!sReturning) {
+            Bundle bundle = new Bundle();
+            bundle.putString(FirebaseAnalytics.Param.ITEM_ID, String.format("%s_%s", mPodcastTitle, sEpisodeTitle));
+            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+        }
 
         SharedPreferences.Editor editor = getSharedPreferences(getString(R.string.podkis_shared_prefs), Context.MODE_PRIVATE).edit();
         if (sEpisodeId != null) {
