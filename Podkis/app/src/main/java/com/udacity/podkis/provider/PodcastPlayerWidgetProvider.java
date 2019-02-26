@@ -5,7 +5,9 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.widget.RemoteViews;
 
 import com.squareup.picasso.Picasso;
@@ -57,7 +59,9 @@ public class PodcastPlayerWidgetProvider extends AppWidgetProvider {
             views.setImageViewResource(R.id.widget_podcast_episode_thumbnail, R.drawable.web_hi_res_512);
         } else {
             try {
-                views.setImageViewBitmap(R.id.widget_podcast_episode_thumbnail, Picasso.get().load(episodeImageUrl).get());
+                DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+                float resize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, context.getResources().getInteger(R.integer.widget_podcast_thumbnail_dp), metrics);
+                views.setImageViewBitmap(R.id.widget_podcast_episode_thumbnail, Picasso.get().load(episodeImageUrl).resize((int) resize, (int) resize).get());
             } catch (IOException e) {
                 Log.e(TAG, String.format("updatePodcastPlayerWidget - e: %s", e.getMessage()));
                 views.setImageViewResource(R.id.widget_podcast_episode_thumbnail, R.drawable.web_hi_res_512);
